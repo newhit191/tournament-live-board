@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tournament Live Board
 
-## Getting Started
+Broadcast-style tournament website built with Next.js, Tailwind CSS, and Google Sheets as the source of truth.
 
-First, run the development server:
+## What is included
+
+- Public marketing-style homepage
+- Tournament directory with live and history sections
+- Tournament overview page
+- Big-screen display page for the current featured match
+- Match detail page with per-set scores and total-score winner logic
+- Admin login gate with a shared backstage password
+- Admin tournament list, control room shell, and match control shell
+- Google Sheets reader with mock-data fallback for local demo work
+- JSON API routes for tournament listing and tournament detail
+
+## Tech stack
+
+- Next.js App Router
+- Tailwind CSS v4
+- Google Sheets API via `googleapis`
+
+## Quick start
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Create your local environment file
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `ADMIN_PASSWORD`
+  Shared password for `/admin/login`
+- `GOOGLE_SHEETS_SPREADSHEET_ID`
+  Spreadsheet that stores tournament data
+- `GOOGLE_SHEETS_CLIENT_EMAIL`
+  Service account email with access to the spreadsheet
+- `GOOGLE_SHEETS_PRIVATE_KEY`
+  Service account private key, with newlines escaped as `\n`
+- `NEXT_PUBLIC_SITE_URL`
+  Optional site URL for deployment metadata
 
-## Learn More
+If the Google Sheets variables are missing, the app automatically falls back to local mock tournament data so the UI still works.
 
-To learn more about Next.js, take a look at the following resources:
+## Google Sheet tabs
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Create these tabs in one spreadsheet:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `tournaments`
+- `players`
+- `matches`
+- `match_sets`
+- `standings`
+- `event_log`
 
-## Deploy on Vercel
+The detailed field plan lives in [docs/plans/2026-03-25-tournament-live-board-design.md](./docs/plans/2026-03-25-tournament-live-board-design.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Current scope
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This scaffold focuses on:
+
+- Product structure
+- Visual direction
+- Routing
+- Shared types and score aggregation
+- Google Sheets reading
+- Admin/public separation
+
+The next implementation step is wiring admin score controls and tournament creation into server actions that write back to Google Sheets.
