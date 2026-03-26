@@ -13,6 +13,8 @@ export const metadata = {
   title: "賽事列表",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function TournamentsPage() {
   const tournaments = await getTournamentSummaries();
   const live = tournaments.filter((tournament) => tournament.status === "live");

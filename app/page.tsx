@@ -9,6 +9,8 @@ import {
 } from "@/lib/tournament-labels";
 import { getTournamentSummaries } from "@/lib/tournament-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const tournaments = await getTournamentSummaries();
   const liveTournament =
