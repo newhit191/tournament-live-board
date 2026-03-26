@@ -16,11 +16,11 @@ const teko = Teko({
 export const metadata: Metadata = {
   metadataBase: new URL("https://tournament-live-board.local"),
   title: {
-    default: "Tournament Live Board",
-    template: "%s | Tournament Live Board",
+    default: "Tournament Live Board 賽事直播看板",
+    template: "%s | Tournament Live Board 賽事直播看板",
   },
   description:
-    "A broadcast-style tournament website with public display pages, an admin control room, and Google Sheets as the data source.",
+    "具備公開展示頁、主辦方控制台與 Google Sheets 資料源的賽事直播網站。",
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-Hant-TW"
       className={`${instrumentSans.variable} ${teko.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans text-foreground">{children}</body>

@@ -1,8 +1,9 @@
+import { isInactiveGrandFinalResetMatch } from "@/lib/schedule-generator";
 import type {
   MatchSetRecord,
+  PlayerRecord,
   ResolvedMatch,
   ResolvedStanding,
-  TournamentFormat,
   TournamentRecord,
   TournamentStatus,
   TournamentView,
@@ -25,13 +26,31 @@ export function computeMatchTotals(sets: MatchSetRecord[]) {
   );
 }
 
-export function resolveMatchWinnerId(match: {
+export function countRecordedSets(sets: MatchSetRecord[]) {
+  return sets.filter(
+    (set) =>
+      set.player1Score > 0 ||
+      set.player2Score > 0 ||
+      Boolean(set.note && set.note.trim().length > 0),
+  ).length;
+}
+
+function resolveCompletedWinnerId(match: {
   player1Id: string;
   player2Id: string;
   player1Total: number;
   player2Total: number;
+  state: string;
 }) {
-  if (match.player1Total === match.player2Total) {
+  if (match.player1Id.startsWith("bye:")) {
+    return match.player2Id;
+  }
+
+  if (match.player2Id.startsWith("bye:")) {
+    return match.player1Id;
+  }
+
+  if (match.state !== "completed" || match.player1Total === match.player2Total) {
     return null;
   }
 
@@ -44,14 +63,14 @@ export function buildTournamentView(record: TournamentRecord): TournamentView {
   const playersById = new Map(record.players.map((player) => [player.id, player]));
 
   const matches = record.matches
+    .filter((match) => !isInactiveGrandFinalResetMatch(match))
     .map<ResolvedMatch>((match) => {
-      const player1 = playersById.get(match.player1Id);
-      const player2 = playersById.get(match.player2Id);
-
-      if (!player1 || !player2) {
-        throw new Error(`Match ${match.id} references an unknown player.`);
-      }
-
+      const player1 =
+        playersById.get(match.player1Id) ??
+        createVirtualPlayer(record.id, match.player1Id);
+      const player2 =
+        playersById.get(match.player2Id) ??
+        createVirtualPlayer(record.id, match.player2Id);
       const totals = computeMatchTotals(match.sets);
 
       return {
@@ -60,12 +79,14 @@ export function buildTournamentView(record: TournamentRecord): TournamentView {
         player2,
         player1Total: totals.player1Total,
         player2Total: totals.player2Total,
-        winnerId: resolveMatchWinnerId({
+        winnerId: resolveCompletedWinnerId({
           player1Id: player1.id,
           player2Id: player2.id,
           player1Total: totals.player1Total,
           player2Total: totals.player2Total,
+          state: match.state,
         }),
+        recordedSetCount: countRecordedSets(match.sets),
       };
     })
     .toSorted(
@@ -74,9 +95,10 @@ export function buildTournamentView(record: TournamentRecord): TournamentView {
     );
 
   const currentMatch =
-    matches.find((match) => match.id === record.currentMatchId) ||
-    matches.find((match) => match.isFeatured) ||
-    matches.find((match) => match.state === "live") ||
+    matches.find((match) => match.id === record.currentMatchId) ??
+    matches.find((match) => match.isFeatured) ??
+    matches.find((match) => match.state === "live") ??
+    matches.find((match) => match.state === "scheduled") ??
     null;
 
   return {
@@ -91,6 +113,47 @@ export function buildTournamentView(record: TournamentRecord): TournamentView {
         .length,
       liveMatches: matches.filter((match) => match.state === "live").length,
     },
+  };
+}
+
+function createVirtualPlayer(
+  tournamentId: string,
+  playerId: string | null | undefined,
+): PlayerRecord {
+  const normalizedId = playerId?.trim();
+
+  if (!normalizedId || normalizedId.startsWith("pending:")) {
+    return {
+      id: normalizedId || `pending:${tournamentId}:unknown`,
+      tournamentId,
+      displayName: "待定",
+      avatarUrl: null,
+      seed: null,
+      status: "active",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  if (normalizedId.startsWith("bye:")) {
+    return {
+      id: normalizedId,
+      tournamentId,
+      displayName: "輪空",
+      avatarUrl: null,
+      seed: null,
+      status: "withdrawn",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  return {
+    id: normalizedId,
+    tournamentId,
+    displayName: "未命名選手",
+    avatarUrl: null,
+    seed: null,
+    status: "withdrawn",
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -117,7 +180,13 @@ function buildStandings(
   );
 
   for (const match of matches) {
-    if (match.state !== "completed") {
+    if (
+      match.state !== "completed" ||
+      match.player1.id.startsWith("pending:") ||
+      match.player2.id.startsWith("pending:") ||
+      match.player1.id.startsWith("bye:") ||
+      match.player2.id.startsWith("bye:")
+    ) {
       continue;
     }
 
@@ -169,25 +238,6 @@ function buildStandings(
     }));
 }
 
-export function formatTournamentFormat(format: TournamentFormat) {
-  return format === "single_elimination" ? "Single Elimination" : "Round Robin";
-}
-
-export function formatTournamentStatus(status: TournamentStatus) {
-  switch (status) {
-    case "live":
-      return "Live";
-    case "draft":
-      return "Draft";
-    case "completed":
-      return "Completed";
-    case "archived":
-      return "Archived";
-    default:
-      return status;
-  }
-}
-
 export function sortTournamentsByStatus<T extends { status: TournamentStatus }>(
   tournaments: T[],
 ) {
@@ -205,10 +255,13 @@ export function groupMatchesByRound(matches: ResolvedMatch[]) {
     groups.set(match.roundName, bucket);
   }
 
-  return [...groups.entries()].map(([roundName, roundMatches]) => ({
-    roundName,
-    matches: roundMatches.toSorted(
-      (left, right) => left.matchOrder - right.matchOrder,
-    ),
-  }));
+  return [...groups.entries()]
+    .map(([roundName, roundMatches]) => ({
+      roundName,
+      matches: roundMatches.toSorted(
+        (left, right) => left.matchOrder - right.matchOrder,
+      ),
+      roundOrder: roundMatches[0]?.roundOrder ?? 0,
+    }))
+    .toSorted((left, right) => left.roundOrder - right.roundOrder);
 }

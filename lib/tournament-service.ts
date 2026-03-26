@@ -6,12 +6,60 @@ import { mockTournaments } from "@/lib/mock-data";
 import { buildTournamentView, sortTournamentsByStatus } from "@/lib/score-utils";
 import type { TournamentSummary, TournamentView } from "@/lib/tournament-types";
 
-async function loadTournamentViews(): Promise<TournamentView[]> {
-  const source = isGoogleSheetsConfigured()
-    ? await loadTournamentsFromSheets()
-    : mockTournaments;
+type TournamentViewCache = {
+  expiresAt: number;
+  data: TournamentView[] | null;
+  pending: Promise<TournamentView[]> | null;
+};
 
-  return sortTournamentsByStatus(source.map(buildTournamentView));
+const CACHE_TTL_MS = 1500;
+const cache: TournamentViewCache = {
+  expiresAt: 0,
+  data: null,
+  pending: null,
+};
+
+export function invalidateTournamentServiceCache() {
+  cache.expiresAt = 0;
+  cache.data = null;
+  cache.pending = null;
+}
+
+async function loadTournamentViews(): Promise<TournamentView[]> {
+  const now = Date.now();
+
+  if (cache.data && now < cache.expiresAt) {
+    return cache.data;
+  }
+
+  if (cache.pending) {
+    return cache.pending;
+  }
+
+  cache.pending = (async () => {
+    try {
+      const source = isGoogleSheetsConfigured()
+        ? await loadTournamentsFromSheets()
+        : mockTournaments;
+      const views = sortTournamentsByStatus(source.map(buildTournamentView));
+      cache.data = views;
+      cache.expiresAt = Date.now() + CACHE_TTL_MS;
+      return views;
+    } catch (error) {
+      if (cache.data) {
+        cache.expiresAt = Date.now() + CACHE_TTL_MS;
+        return cache.data;
+      }
+
+      throw error;
+    }
+  })();
+
+  try {
+    return await cache.pending;
+  } finally {
+    cache.pending = null;
+  }
 }
 
 export async function getTournamentSummaries(): Promise<TournamentSummary[]> {
@@ -29,7 +77,9 @@ export async function getTournamentSummaries(): Promise<TournamentSummary[]> {
     heroSummary: tournament.heroSummary,
     startedAt: tournament.startedAt,
     endedAt: tournament.endedAt,
-    winScoreRule: tournament.winScoreRule,
+    scoringMode: tournament.scoringMode,
+    targetScore: tournament.targetScore,
+    setCount: tournament.setCount,
     currentMatchId: tournament.currentMatchId,
     playerCount: tournament.stats.playerCount,
     matchCount: tournament.stats.totalMatches,

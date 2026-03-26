@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PlayerAvatar } from "@/components/player-avatar";
 import { SiteNav } from "@/components/site-nav";
+import { TournamentStructure } from "@/components/tournament-structure";
 import { formatDateTime, getStatusClasses } from "@/lib/formatters";
+import { groupMatchesByRound } from "@/lib/score-utils";
 import {
+  formatPlayerStatus,
+  formatScoringMode,
+  formatScoringRule,
   formatTournamentFormat,
   formatTournamentStatus,
-  groupMatchesByRound,
-} from "@/lib/score-utils";
+} from "@/lib/tournament-labels";
 import { getTournamentBySlug } from "@/lib/tournament-service";
 
 type TournamentPageProps = {
@@ -33,18 +38,18 @@ export default async function TournamentDetailPage({
       <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-12 pt-8 sm:px-6 lg:px-8">
         <section className="panel-strong rounded-[2rem] px-6 py-8 lg:px-10">
           <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="max-w-4xl">
+            <div className="max-w-4xl min-w-0">
               <p className="eyebrow text-amber-200">{tournament.heroKicker}</p>
-              <h1 className="mt-3 font-display text-6xl uppercase tracking-[0.08em] text-white sm:text-7xl">
+              <h1 className="mt-3 break-words font-display text-4xl tracking-[0.06em] text-white sm:text-5xl lg:text-6xl">
                 {tournament.name}
               </h1>
-              <p className="mt-4 max-w-3xl text-lg leading-8 text-white/68">
+              <p className="mt-4 max-w-3xl text-base leading-7 text-white/68 sm:text-lg sm:leading-8">
                 {tournament.heroSummary}
               </p>
             </div>
 
             <span
-              className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.24em] ${getStatusClasses(
+              className={`rounded-full border px-4 py-2 text-xs tracking-[0.24em] ${getStatusClasses(
                 tournament.status,
               )}`}
             >
@@ -52,86 +57,132 @@ export default async function TournamentDetailPage({
             </span>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
-            {[
-              ["Venue", tournament.venue],
-              ["Format", formatTournamentFormat(tournament.format)],
-              ["Players", tournament.stats.playerCount.toString()],
-              ["Win target", `${tournament.winScoreRule} pts`],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"
-              >
-                <p className="text-xs uppercase tracking-[0.24em] text-white/45">
-                  {label}
-                </p>
-                <p className="mt-2 text-lg text-white">{value}</p>
-              </div>
-            ))}
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <InfoCard label="場地" value={tournament.venue} />
+            <InfoCard label="賽制" value={formatTournamentFormat(tournament.format)} />
+            <InfoCard label="計分方式" value={formatScoringMode(tournament.scoringMode)} />
+            <InfoCard label="參賽人數" value={String(tournament.stats.playerCount)} />
+            <InfoCard label="規則" value={formatScoringRule(tournament)} compact />
+          </div>
+        </section>
+
+        <section className="panel min-w-0 overflow-x-hidden rounded-[1.75rem] p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="eyebrow text-cyan-200">
+                {tournament.format === "single_elimination"
+                  ? "淘汰樹狀圖"
+                  : tournament.format === "double_elimination"
+                    ? "雙敗淘汰賽程圖"
+                    : "循環賽結構"}
+              </p>
+              <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
+                賽程總覽
+              </h2>
+            </div>
+            <Link
+              href={`/tournaments/${tournament.slug}/display`}
+              className="rounded-full border border-white/14 px-4 py-2 text-xs tracking-[0.24em] text-white/76 transition hover:bg-white/8"
+            >
+              開啟大螢幕頁
+            </Link>
+          </div>
+
+          <div className="mt-6 min-w-0">
+            <TournamentStructure
+              tournament={tournament}
+              compact
+              detailBasePath={`/tournaments/${tournament.slug}/matches`}
+            />
           </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {tournament.currentMatch ? (
               <div className="panel rounded-[1.75rem] p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="eyebrow text-cyan-200">Featured Match</p>
-                    <h2 className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
+                    <p className="eyebrow text-cyan-200">目前展示中的場次</p>
+                    <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
                       {tournament.currentMatch.roundName}
                     </h2>
                   </div>
                   <Link
                     href={`/tournaments/${tournament.slug}/display`}
-                    className="rounded-full border border-white/14 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/76 transition hover:bg-white/8"
+                    className="rounded-full border border-white/14 px-4 py-2 text-xs tracking-[0.24em] text-white/76 transition hover:bg-white/8"
                   >
-                    Open display
+                    進入展示畫面
                   </Link>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
-                    <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                      Player 1
-                    </p>
-                    <p className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
-                      {tournament.currentMatch.player1.displayName}
-                    </p>
+                <div className="mt-6 grid gap-4 xl:grid-cols-[1fr_auto_1fr] xl:items-center">
+                  <div className="min-w-0 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
+                    <p className="text-xs tracking-[0.22em] text-white/45">選手 1</p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <PlayerAvatar name={tournament.currentMatch.player1.displayName} />
+                      <p className="break-words font-display text-3xl tracking-[0.06em] text-white sm:text-4xl">
+                        {tournament.currentMatch.player1.displayName}
+                      </p>
+                    </div>
                   </div>
-                  <div className="font-display text-6xl uppercase tracking-[0.16em] text-amber-200">
+                  <div className="text-center font-display text-4xl tracking-[0.1em] text-amber-200 sm:text-5xl">
                     {tournament.currentMatch.player1Total}
                     <span className="mx-3 text-white/28">:</span>
                     {tournament.currentMatch.player2Total}
                   </div>
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
-                    <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                      Player 2
-                    </p>
-                    <p className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
-                      {tournament.currentMatch.player2.displayName}
-                    </p>
+                  <div className="min-w-0 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
+                    <p className="text-xs tracking-[0.22em] text-white/45">選手 2</p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <PlayerAvatar name={tournament.currentMatch.player2.displayName} />
+                      <p className="break-words font-display text-3xl tracking-[0.06em] text-white sm:text-4xl">
+                        {tournament.currentMatch.player2.displayName}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.22em] text-white/45">
+                {tournament.scoringMode === "set_total" || tournament.currentMatch.sets.length > 1 ? (
+                  <div className="mt-6 grid gap-3 md:grid-cols-3">
+                    {tournament.currentMatch.sets.map((set) => (
+                      <div
+                        key={set.id}
+                        className="rounded-3xl border border-white/10 bg-black/20 px-4 py-3"
+                      >
+                        <p className="text-xs tracking-[0.22em] text-white/42">
+                          第 {set.setNo} 局
+                        </p>
+                        <p className="mt-2 font-display text-3xl tracking-[0.08em] text-white">
+                          {set.player1Score}
+                          <span className="mx-2 text-white/25">:</span>
+                          {set.player2Score}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-6 rounded-3xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/68">
+                    {formatScoringRule(tournament)}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-wrap gap-3 text-xs tracking-[0.22em] text-white/45">
                   <span>{tournament.currentMatch.scheduledLabel}</span>
-                  <span>Updated {formatDateTime(tournament.currentMatch.updatedAt)}</span>
+                  <span>更新於 {formatDateTime(tournament.currentMatch.updatedAt)}</span>
                   <Link
                     href={`/tournaments/${tournament.slug}/matches/${tournament.currentMatch.id}`}
                     className="text-cyan-200 transition hover:text-white"
                   >
-                    Open match detail
+                    查看場次詳情
                   </Link>
                 </div>
               </div>
             ) : null}
 
             <div className="panel rounded-[1.75rem] p-6">
-              <p className="eyebrow text-white/55">Schedule</p>
-              <h2 className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
-                Match flow
+              <p className="eyebrow text-white/55">各輪次對戰</p>
+              <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
+                所有場次
               </h2>
 
               <div className="mt-6 space-y-4">
@@ -140,12 +191,12 @@ export default async function TournamentDetailPage({
                     key={round.roundName}
                     className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5"
                   >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display text-3xl uppercase tracking-[0.08em] text-white">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-display text-3xl tracking-[0.08em] text-white">
                         {round.roundName}
                       </h3>
-                      <span className="text-xs uppercase tracking-[0.24em] text-white/42">
-                        {round.matches.length} matches
+                      <span className="text-xs tracking-[0.24em] text-white/42">
+                        {round.matches.length} 場
                       </span>
                     </div>
 
@@ -156,29 +207,33 @@ export default async function TournamentDetailPage({
                           href={`/tournaments/${tournament.slug}/matches/${match.id}`}
                           className="rounded-3xl border border-white/10 bg-black/20 p-4 transition hover:border-white/20"
                         >
-                          <div className="flex items-center justify-between gap-4">
-                            <div>
-                              <p className="font-display text-2xl uppercase tracking-[0.08em] text-white">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="truncate font-display text-2xl tracking-[0.08em] text-white">
                                 {match.player1.displayName}
                                 <span className="mx-3 text-white/25">vs</span>
                                 {match.player2.displayName}
                               </p>
-                              <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/42">
+                              <p className="mt-2 text-xs tracking-[0.22em] text-white/42">
                                 {match.scheduledLabel}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-display text-4xl uppercase tracking-[0.12em] text-amber-200">
+                            <div className="text-left sm:text-right">
+                              <p className="font-display text-4xl tracking-[0.12em] text-amber-200">
                                 {match.player1Total}
                                 <span className="mx-2 text-white/25">:</span>
                                 {match.player2Total}
                               </p>
                               <span
-                                className={`mt-2 inline-flex rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.22em] ${getStatusClasses(
+                                className={`mt-2 inline-flex rounded-full border px-3 py-1 text-[11px] tracking-[0.22em] ${getStatusClasses(
                                   match.state,
                                 )}`}
                               >
-                                {match.state}
+                                {match.state === "live"
+                                  ? "進行中"
+                                  : match.state === "completed"
+                                    ? "已結束"
+                                    : "待開始"}
                               </span>
                             </div>
                           </div>
@@ -193,69 +248,57 @@ export default async function TournamentDetailPage({
 
           <div className="space-y-6">
             <div className="panel rounded-[1.75rem] p-6">
-              <p className="eyebrow text-white/55">Participants</p>
-              <h2 className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
-                Player board
+              <p className="eyebrow text-white/55">參賽者名單</p>
+              <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
+                選手列表
               </h2>
 
               <div className="mt-5 grid gap-3">
                 {tournament.players.map((player) => (
                   <div
                     key={player.id}
-                    className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3"
                   >
-                    <div>
-                      <p className="font-display text-2xl uppercase tracking-[0.08em] text-white">
-                        {player.displayName}
-                      </p>
-                      <p className="text-xs uppercase tracking-[0.24em] text-white/42">
-                        Seed {player.seed ?? "-"}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <PlayerAvatar name={player.displayName} sizeClassName="h-11 w-11" />
+                      <div className="min-w-0">
+                        <p className="truncate font-display text-2xl tracking-[0.08em] text-white">
+                          {player.displayName}
+                        </p>
+                        <p className="text-xs tracking-[0.24em] text-white/42">
+                          種子序 {player.seed ?? "-"}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.22em] text-white/42">
-                      {player.status}
+                    <span className="text-xs tracking-[0.22em] text-white/42">
+                      {formatPlayerStatus(player.status)}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-
-            {tournament.format === "round_robin" ? (
-              <div className="panel rounded-[1.75rem] p-6">
-                <p className="eyebrow text-cyan-200">Standings</p>
-                <h2 className="mt-2 font-display text-4xl uppercase tracking-[0.08em] text-white">
-                  Ranking snapshot
-                </h2>
-
-                <div className="mt-5 space-y-3">
-                  {tournament.standings.map((standing) => (
-                    <div
-                      key={standing.playerId}
-                      className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3"
-                    >
-                      <p className="font-display text-3xl uppercase tracking-[0.08em] text-amber-200">
-                        {standing.rank}
-                      </p>
-                      <div>
-                        <p className="font-display text-2xl uppercase tracking-[0.08em] text-white">
-                          {standing.player.displayName}
-                        </p>
-                        <p className="text-xs uppercase tracking-[0.22em] text-white/42">
-                          {standing.wins}W / {standing.losses}L
-                        </p>
-                      </div>
-                      <div className="text-right text-sm text-white/72">
-                        <p>{standing.pointsFor} PF</p>
-                        <p>{standing.pointDiff} DIFF</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function InfoCard({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+      <p className="text-xs tracking-[0.24em] text-white/45">{label}</p>
+      <p className={`mt-2 text-white ${compact ? "text-sm leading-6" : "text-lg"}`}>
+        {value}
+      </p>
     </div>
   );
 }

@@ -1,65 +1,68 @@
 # Tournament Live Board
 
-Broadcast-style tournament website built with Next.js, Tailwind CSS, and Google Sheets as the source of truth.
+使用 Next.js、Tailwind CSS 與 Google Sheets API 製作的賽事專業網站。
 
-## What is included
+這個專案的定位是：
+- 主辦方後台 + 公開展示頁
+- 1 對 1 個人賽
+- 適合 1 到 2 人操作
+- 支援大螢幕展示與即時比分更新
 
-- Public marketing-style homepage
-- Tournament directory with live and history sections
-- Tournament overview page
-- Big-screen display page for the current featured match
-- Match detail page with per-set scores and total-score winner logic
-- Admin login gate with a shared backstage password
-- Admin tournament list, control room shell, and match control shell
-- Google Sheets reader with mock-data fallback for local demo work
-- JSON API routes for tournament listing and tournament detail
+## 目前功能
 
-## Tech stack
+- 建立賽事
+- 設定參賽人數並逐格輸入選手名稱
+- 支援單淘汰賽與循環賽
+- 支援目標分制與分局加總制
+- 可指定目前展示中的場次
+- 可更新比分、直接覆蓋最終比分
+- 公開頁可查看賽程、目前進行中的場次與歷史賽事
+- 比賽資料可寫入固定 Google Sheet
+
+## 技術棧
 
 - Next.js App Router
 - Tailwind CSS v4
-- Google Sheets API via `googleapis`
+- Google Sheets API
 
-## Quick start
+## 本機啟動
 
-1. Install dependencies
+1. 安裝依賴
 
 ```bash
 npm install
 ```
 
-2. Create your local environment file
+2. 建立環境變數
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Start the dev server
+3. 啟動開發環境
 
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+4. 開啟 [http://localhost:3000](http://localhost:3000)
 
-## Environment variables
+## 環境變數
 
 - `ADMIN_PASSWORD`
-  Shared password for `/admin/login`
+  後台登入密碼
 - `GOOGLE_SHEETS_SPREADSHEET_ID`
-  Spreadsheet that stores tournament data
+  Google Sheet 的 Spreadsheet ID
 - `GOOGLE_SHEETS_CLIENT_EMAIL`
-  Service account email with access to the spreadsheet
+  service account email
 - `GOOGLE_SHEETS_PRIVATE_KEY`
-  Service account private key, with newlines escaped as `\n`
+  service account private key，保留 `\n`
 - `NEXT_PUBLIC_SITE_URL`
-  Optional site URL for deployment metadata
+  網站公開網址
 
-If the Google Sheets variables are missing, the app automatically falls back to local mock tournament data so the UI still works.
+如果沒有先接 Google Sheets，系統會自動使用內建 mock data 來展示畫面。
 
-## Google Sheet tabs
-
-Create these tabs in one spreadsheet:
+## Google Sheet 分頁
 
 - `tournaments`
 - `players`
@@ -68,17 +71,22 @@ Create these tabs in one spreadsheet:
 - `standings`
 - `event_log`
 
-The detailed field plan lives in [docs/plans/2026-03-25-tournament-live-board-design.md](./docs/plans/2026-03-25-tournament-live-board-design.md).
+## 常用指令
 
-## Current scope
+```bash
+npm run setup:sheets
+```
 
-This scaffold focuses on:
+初始化 Google Sheet 欄位結構。
 
-- Product structure
-- Visual direction
-- Routing
-- Shared types and score aggregation
-- Google Sheets reading
-- Admin/public separation
+```bash
+npm run seed:demo
+```
 
-The next implementation step is wiring admin score controls and tournament creation into server actions that write back to Google Sheets.
+把示範資料重新寫入 Google Sheet。
+
+## 備註
+
+- `tournaments` 會保留舊欄位 `win_score_rule` 以維持相容性。
+- 新模型主要使用 `scoring_mode`、`target_score`、`set_count`。
+- 如果你先前曾把 service account 私鑰貼到公開對話或其他不安全位置，建議到 Google Cloud 重新輪替一把新的 key。

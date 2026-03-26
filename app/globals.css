@@ -38,6 +38,7 @@ html {
     radial-gradient(circle at top left, rgba(241, 199, 109, 0.14), transparent 32%),
     radial-gradient(circle at top right, rgba(91, 231, 255, 0.16), transparent 28%),
     linear-gradient(180deg, #0c111a 0%, #06080d 100%);
+  overflow-x: hidden;
 }
 
 body {
@@ -46,6 +47,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 body::before {

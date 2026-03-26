@@ -15,7 +15,7 @@ export async function GET(
 
   if (!tournament) {
     return NextResponse.json(
-      { error: "Tournament not found." },
+      { error: "找不到指定賽事。" },
       { status: 404 },
     );
   }

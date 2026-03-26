@@ -1,24 +1,22 @@
-import type {
-  MatchState,
-  TournamentStatus,
-} from "@/lib/tournament-types";
+import type { MatchState, TournamentStatus } from "@/lib/tournament-types";
 
-const SHORT_DATE_TIME = new Intl.DateTimeFormat("en-US", {
-  month: "short",
+const SHORT_DATE_TIME = new Intl.DateTimeFormat("zh-TW", {
+  month: "numeric",
   day: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hour12: false,
 });
 
-const DAY_DATE = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
+const DAY_DATE = new Intl.DateTimeFormat("zh-TW", {
   year: "numeric",
+  month: "numeric",
+  day: "numeric",
 });
 
 export function formatDateTime(value: string | null) {
   if (!value) {
-    return "TBD";
+    return "尚未設定";
   }
 
   return SHORT_DATE_TIME.format(new Date(value));
@@ -26,7 +24,7 @@ export function formatDateTime(value: string | null) {
 
 export function formatDate(value: string | null) {
   if (!value) {
-    return "TBD";
+    return "尚未設定";
   }
 
   return DAY_DATE.format(new Date(value));

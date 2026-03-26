@@ -18,11 +18,8 @@ export function AdminLoginForm({ demoMode }: AdminLoginFormProps) {
   return (
     <form action={formAction} className="space-y-5">
       <div className="space-y-2">
-        <label
-          htmlFor="password"
-          className="text-xs uppercase tracking-[0.24em] text-white/45"
-        >
-          Shared admin password
+        <label htmlFor="password" className="text-xs tracking-[0.24em] text-white/45">
+          後台管理密碼
         </label>
         <input
           id="password"
@@ -30,7 +27,7 @@ export function AdminLoginForm({ demoMode }: AdminLoginFormProps) {
           type="password"
           defaultValue={demoMode ? "demo-mode-open" : ""}
           className="w-full rounded-3xl border border-white/12 bg-white/[0.05] px-5 py-4 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/35"
-          placeholder="Enter backstage password"
+          placeholder="請輸入後台密碼"
         />
       </div>
 
@@ -43,9 +40,9 @@ export function AdminLoginForm({ demoMode }: AdminLoginFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full border border-amber-300/30 bg-amber-300/14 px-5 py-4 text-sm uppercase tracking-[0.28em] text-amber-100 transition hover:bg-amber-300/20 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-full border border-amber-300/30 bg-amber-300/14 px-5 py-4 text-sm tracking-[0.2em] text-amber-100 transition hover:bg-amber-300/20 disabled:cursor-not-allowed disabled:opacity-60 sm:tracking-[0.28em]"
       >
-        {isPending ? "Opening..." : "Enter Control Room"}
+        {isPending ? "登入中..." : "登入後台"}
       </button>
     </form>
   );

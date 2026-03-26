@@ -1,12 +1,17 @@
-export type TournamentFormat = "single_elimination" | "round_robin";
+export type TournamentFormat =
+  | "single_elimination"
+  | "double_elimination"
+  | "round_robin";
 export type TournamentStatus = "draft" | "live" | "completed" | "archived";
 export type MatchState = "scheduled" | "live" | "completed";
 export type PlayerStatus = "active" | "eliminated" | "withdrawn";
+export type ScoringMode = "target_score" | "set_total";
 
 export type PlayerRecord = {
   id: string;
   tournamentId: string;
   displayName: string;
+  avatarUrl: string | null;
   seed: number | null;
   status: PlayerStatus;
   createdAt: string;
@@ -55,7 +60,9 @@ export type TournamentRecord = {
   name: string;
   format: TournamentFormat;
   status: TournamentStatus;
-  winScoreRule: number;
+  scoringMode: ScoringMode;
+  targetScore: number | null;
+  setCount: number | null;
   currentMatchId: string | null;
   theme: string;
   venue: string;
@@ -76,6 +83,7 @@ export type ResolvedMatch = Omit<MatchRecord, "player1Id" | "player2Id"> & {
   player1Total: number;
   player2Total: number;
   winnerId: string | null;
+  recordedSetCount: number;
 };
 
 export type ResolvedStanding = StandingRecord & {
@@ -107,7 +115,9 @@ export type TournamentSummary = Pick<
   | "heroSummary"
   | "startedAt"
   | "endedAt"
-  | "winScoreRule"
+  | "scoringMode"
+  | "targetScore"
+  | "setCount"
 > & {
   currentMatchId: string | null;
   playerCount: number;
