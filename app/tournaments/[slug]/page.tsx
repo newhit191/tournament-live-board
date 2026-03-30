@@ -7,6 +7,7 @@ import { TournamentStructure } from "@/components/tournament-structure";
 import { formatDateTime, getStatusClasses } from "@/lib/formatters";
 import { groupMatchesByRound } from "@/lib/score-utils";
 import {
+  formatMatchState,
   formatPlayerStatus,
   formatScoringMode,
   formatScoringRule,
@@ -19,9 +20,7 @@ type TournamentPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export default async function TournamentDetailPage({
-  params,
-}: TournamentPageProps) {
+export default async function TournamentDetailPage({ params }: TournamentPageProps) {
   const { slug } = await params;
   const tournament = await getTournamentBySlug(slug);
 
@@ -62,7 +61,7 @@ export default async function TournamentDetailPage({
             <InfoCard label="賽制" value={formatTournamentFormat(tournament.format)} />
             <InfoCard label="計分方式" value={formatScoringMode(tournament.scoringMode)} />
             <InfoCard label="參賽人數" value={String(tournament.stats.playerCount)} />
-            <InfoCard label="規則" value={formatScoringRule(tournament)} compact />
+            <InfoCard label="計分規則" value={formatScoringRule(tournament)} compact />
           </div>
         </section>
 
@@ -71,20 +70,20 @@ export default async function TournamentDetailPage({
             <div>
               <p className="eyebrow text-cyan-200">
                 {tournament.format === "single_elimination"
-                  ? "淘汰樹狀圖"
+                  ? "單淘汰賽程圖"
                   : tournament.format === "double_elimination"
                     ? "雙敗淘汰賽程圖"
-                    : "循環賽結構"}
+                    : "循環賽賽程圖"}
               </p>
               <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
-                賽程總覽
+                賽事結構
               </h2>
             </div>
             <Link
               href={`/tournaments/${tournament.slug}/display`}
               className="rounded-full border border-white/14 px-4 py-2 text-xs tracking-[0.24em] text-white/76 transition hover:bg-white/8"
             >
-              開啟大螢幕頁
+              開啟大螢幕展示
             </Link>
           </div>
 
@@ -103,7 +102,7 @@ export default async function TournamentDetailPage({
               <div className="panel rounded-[1.75rem] p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="eyebrow text-cyan-200">目前展示中的場次</p>
+                    <p className="eyebrow text-cyan-200">目前進行中的場次</p>
                     <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
                       {tournament.currentMatch.roundName}
                     </h2>
@@ -112,7 +111,7 @@ export default async function TournamentDetailPage({
                     href={`/tournaments/${tournament.slug}/display`}
                     className="rounded-full border border-white/14 px-4 py-2 text-xs tracking-[0.24em] text-white/76 transition hover:bg-white/8"
                   >
-                    進入展示畫面
+                    公開展示頁
                   </Link>
                 </div>
 
@@ -142,7 +141,8 @@ export default async function TournamentDetailPage({
                   </div>
                 </div>
 
-                {tournament.scoringMode === "set_total" || tournament.currentMatch.sets.length > 1 ? (
+                {tournament.scoringMode === "set_total" ||
+                tournament.currentMatch.sets.length > 1 ? (
                   <div className="mt-6 grid gap-3 md:grid-cols-3">
                     {tournament.currentMatch.sets.map((set) => (
                       <div
@@ -180,9 +180,9 @@ export default async function TournamentDetailPage({
             ) : null}
 
             <div className="panel rounded-[1.75rem] p-6">
-              <p className="eyebrow text-white/55">各輪次對戰</p>
+              <p className="eyebrow text-white/55">輪次明細</p>
               <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
-                所有場次
+                全部場次
               </h2>
 
               <div className="mt-6 space-y-4">
@@ -229,11 +229,7 @@ export default async function TournamentDetailPage({
                                   match.state,
                                 )}`}
                               >
-                                {match.state === "live"
-                                  ? "進行中"
-                                  : match.state === "completed"
-                                    ? "已結束"
-                                    : "待開始"}
+                                {formatMatchState(match.state)}
                               </span>
                             </div>
                           </div>
@@ -248,9 +244,9 @@ export default async function TournamentDetailPage({
 
           <div className="space-y-6">
             <div className="panel rounded-[1.75rem] p-6">
-              <p className="eyebrow text-white/55">參賽者名單</p>
+              <p className="eyebrow text-white/55">參賽名單</p>
               <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
-                選手列表
+                選手資訊
               </h2>
 
               <div className="mt-5 grid gap-3">
@@ -266,7 +262,7 @@ export default async function TournamentDetailPage({
                           {player.displayName}
                         </p>
                         <p className="text-xs tracking-[0.24em] text-white/42">
-                          種子序 {player.seed ?? "-"}
+                          種子順位 {player.seed ?? "-"}
                         </p>
                       </div>
                     </div>

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Instrument_Sans, Teko } from "next/font/google";
+
+import { BackgroundMusicHost } from "@/components/background-music-host";
+
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -16,11 +19,11 @@ const teko = Teko({
 export const metadata: Metadata = {
   metadataBase: new URL("https://tournament-live-board.local"),
   title: {
-    default: "Tournament Live Board 賽事直播看板",
-    template: "%s | Tournament Live Board 賽事直播看板",
+    default: "Tournament Live Board | 即時賽事展示系統",
+    template: "%s | Tournament Live Board",
   },
   description:
-    "具備公開展示頁、主辦方控制台與 Google Sheets 資料源的賽事直播網站。",
+    "結合主辦方後台與公開展示頁的賽事系統，支援單淘汰、雙敗淘汰、循環賽與即時比分更新。",
 };
 
 export default function RootLayout({
@@ -33,7 +36,10 @@ export default function RootLayout({
       lang="zh-Hant-TW"
       className={`${instrumentSans.variable} ${teko.variable} h-full antialiased`}
     >
-      <body className="min-h-full font-sans text-foreground">{children}</body>
+      <body className="min-h-full font-sans text-foreground">
+        {children}
+        <BackgroundMusicHost />
+      </body>
     </html>
   );
 }

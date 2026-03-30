@@ -102,9 +102,7 @@ function TournamentSection({
               <Card label="場地" value={tournament.venue} />
             </div>
 
-            <p className="mt-5 text-sm leading-7 text-white/64">
-              {tournament.heroSummary}
-            </p>
+            <p className="mt-5 text-sm leading-7 text-white/64">{tournament.heroSummary}</p>
 
             <div className="mt-5 flex items-center justify-between text-xs tracking-[0.24em] text-white/42">
               <span>開始時間 {formatDate(tournament.startedAt)}</span>

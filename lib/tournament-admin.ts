@@ -12,6 +12,10 @@ import {
   generateRoundRobinSchedule,
   generateSingleEliminationSchedule,
   isInactiveGrandFinalResetMatch,
+  isRoundRobinFinalMatch,
+  isRoundRobinPlayoffMatch,
+  isRoundRobinRegularMatch,
+  isRoundRobinSemifinalMatch,
 } from "@/lib/schedule-generator";
 import type {
   MatchRecord,
@@ -321,24 +325,46 @@ function serializeMatchSets(matches: MatchRecord[]) {
   return matches.flatMap((match) => match.sets.map(matchSetRow));
 }
 
-function buildStandingsRows(
+function calculatePointRatio(pointsFor: number, pointsAgainst: number) {
+  if (pointsAgainst === 0) {
+    return pointsFor === 0 ? 0 : Number.POSITIVE_INFINITY;
+  }
+
+  return pointsFor / pointsAgainst;
+}
+
+type StandingSnapshot = {
+  tournament_id: string;
+  player_id: string;
+  seed: number;
+  wins: number;
+  losses: number;
+  points_for: number;
+  points_against: number;
+  point_diff: number;
+  point_ratio: number;
+  updated_at: string;
+};
+
+function buildStandingsSnapshot(
   tournamentId: string,
   players: PlayerRecord[],
   matches: MatchRecord[],
   updatedAt: string,
 ) {
-  const standings = new Map(
+  const standings = new Map<string, StandingSnapshot>(
     players.map((player) => [
       player.id,
       {
         tournament_id: tournamentId,
         player_id: player.id,
+        seed: player.seed ?? Number.MAX_SAFE_INTEGER,
         wins: 0,
         losses: 0,
         points_for: 0,
         points_against: 0,
         point_diff: 0,
-        rank: 0,
+        point_ratio: 0,
         updated_at: updatedAt,
       },
     ]),
@@ -350,7 +376,8 @@ function buildStandingsRows(
       match.player1Id.startsWith("pending:") ||
       match.player2Id.startsWith("pending:") ||
       match.player1Id.startsWith("bye:") ||
-      match.player2Id.startsWith("bye:")
+      match.player2Id.startsWith("bye:") ||
+      isRoundRobinPlayoffMatch(match)
     ) {
       continue;
     }
@@ -366,10 +393,12 @@ function buildStandingsRows(
     left.points_for += totals.player1Total;
     left.points_against += totals.player2Total;
     left.point_diff = left.points_for - left.points_against;
+    left.point_ratio = calculatePointRatio(left.points_for, left.points_against);
 
     right.points_for += totals.player2Total;
     right.points_against += totals.player1Total;
     right.point_diff = right.points_for - right.points_against;
+    right.point_ratio = calculatePointRatio(right.points_for, right.points_against);
 
     const winnerId = getResolvedWinnerId(match);
 
@@ -382,23 +411,39 @@ function buildStandingsRows(
     }
   }
 
-  return [...standings.values()]
-    .toSorted((left, right) => {
-      if (right.wins !== left.wins) {
-        return right.wins - left.wins;
-      }
+  return [...standings.values()].toSorted((left, right) => {
+    if (right.wins !== left.wins) {
+      return right.wins - left.wins;
+    }
 
-      if (right.point_diff !== left.point_diff) {
-        return right.point_diff - left.point_diff;
-      }
+    if (right.point_diff !== left.point_diff) {
+      return right.point_diff - left.point_diff;
+    }
 
-      if (right.points_for !== left.points_for) {
-        return right.points_for - left.points_for;
-      }
+    if (right.point_ratio !== left.point_ratio) {
+      return right.point_ratio - left.point_ratio;
+    }
 
-      return left.player_id.localeCompare(right.player_id);
-    })
-    .map((standing, index) => ({
+    if (right.points_for !== left.points_for) {
+      return right.points_for - left.points_for;
+    }
+
+    if (left.seed !== right.seed) {
+      return left.seed - right.seed;
+    }
+
+    return left.player_id.localeCompare(right.player_id);
+  });
+}
+
+function buildStandingsRows(
+  tournamentId: string,
+  players: PlayerRecord[],
+  matches: MatchRecord[],
+  updatedAt: string,
+) {
+  return buildStandingsSnapshot(tournamentId, players, matches, updatedAt).map(
+    (standing, index) => ({
       tournament_id: standing.tournament_id,
       player_id: standing.player_id,
       wins: String(standing.wins),
@@ -408,7 +453,8 @@ function buildStandingsRows(
       point_diff: String(standing.point_diff),
       rank: String(index + 1),
       updated_at: standing.updated_at,
-    }));
+    }),
+  );
 }
 
 function createEventLogRow(
@@ -925,6 +971,128 @@ function rebuildDoubleEliminationMatches(
   );
 }
 
+function rebuildRoundRobinMatches(
+  matches: MatchRecord[],
+  players: PlayerRecord[],
+  config: TournamentConfig,
+  timestamp: string,
+) {
+  const clonedById = new Map(
+    matches.map((match) => [
+      match.id,
+      {
+        ...match,
+        sets: match.sets.map((set) => ({ ...set })),
+      },
+    ]),
+  );
+
+  const regularMatches = [...clonedById.values()]
+    .filter((match) => isRoundRobinRegularMatch(match))
+    .toSorted(
+      (left, right) =>
+        left.roundOrder - right.roundOrder || left.matchOrder - right.matchOrder,
+    )
+    .map((match) => {
+      const next = {
+        ...match,
+        state: getMatchState(match, config),
+        updatedAt: timestamp,
+      };
+      clonedById.set(next.id, next);
+      return next;
+    });
+
+  const semifinal = [...clonedById.values()].find((match) =>
+    isRoundRobinSemifinalMatch(match),
+  );
+  const finalMatch = [...clonedById.values()].find((match) =>
+    isRoundRobinFinalMatch(match),
+  );
+
+  if (!semifinal && !finalMatch) {
+    return [...clonedById.values()].toSorted(
+      (left, right) =>
+        left.roundOrder - right.roundOrder || left.matchOrder - right.matchOrder,
+    );
+  }
+
+  const regularSeasonCompleted =
+    regularMatches.length > 0 &&
+    regularMatches.every((match) => match.state === "completed");
+
+  if (!regularSeasonCompleted) {
+    if (semifinal) {
+      const resetSemifinal = applyParticipantsToMatch(
+        semifinal,
+        "",
+        "",
+        config,
+        timestamp,
+      );
+      clonedById.set(resetSemifinal.id, resetSemifinal);
+    }
+
+    if (finalMatch) {
+      const resetFinal = applyParticipantsToMatch(
+        finalMatch,
+        "",
+        "",
+        config,
+        timestamp,
+      );
+      clonedById.set(resetFinal.id, resetFinal);
+    }
+
+    return [...clonedById.values()].toSorted(
+      (left, right) =>
+        left.roundOrder - right.roundOrder || left.matchOrder - right.matchOrder,
+    );
+  }
+
+  const standings = buildStandingsSnapshot(
+    regularMatches[0]?.tournamentId ?? matches[0]?.tournamentId ?? "",
+    players,
+    regularMatches,
+    timestamp,
+  );
+  const top1Id = standings[0]?.player_id ?? "";
+  const top2Id = standings[1]?.player_id ?? "";
+  const top3Id = standings[2]?.player_id ?? "";
+
+  let updatedSemifinal = semifinal;
+
+  if (semifinal) {
+    updatedSemifinal = applyParticipantsToMatch(
+      semifinal,
+      top2Id,
+      top3Id,
+      config,
+      timestamp,
+    );
+    clonedById.set(updatedSemifinal.id, updatedSemifinal);
+  }
+
+  if (finalMatch) {
+    const finalistFromSemifinal = updatedSemifinal
+      ? resolveWinnerSlot(updatedSemifinal)
+      : top2Id;
+    const updatedFinal = applyParticipantsToMatch(
+      finalMatch,
+      top1Id,
+      finalistFromSemifinal,
+      config,
+      timestamp,
+    );
+    clonedById.set(updatedFinal.id, updatedFinal);
+  }
+
+  return [...clonedById.values()].toSorted(
+    (left, right) =>
+      left.roundOrder - right.roundOrder || left.matchOrder - right.matchOrder,
+  );
+}
+
 function buildHeroSummary(
   name: string,
   format: TournamentFormat,
@@ -965,6 +1133,14 @@ function validateCreateInput(input: CreateTournamentInput) {
     names.length > 64
   ) {
     throw new Error("淘汰賽模式第一版最多支援 64 位參賽者。");
+  }
+
+  if (
+    (input.format === "single_elimination" ||
+      input.format === "double_elimination") &&
+    names.length % 2 === 1
+  ) {
+    throw new Error("單淘汰與雙敗淘汰僅支援偶數人數，請調整參賽者數量後再建立。");
   }
 
   if (input.scoringMode === "target_score") {
@@ -1011,6 +1187,7 @@ function getTournamentConfig(row: RawSheetRow, matches: MatchRecord[]): Tourname
 
 function recalculateTournamentMatches(
   matches: MatchRecord[],
+  players: PlayerRecord[],
   config: TournamentConfig,
   timestamp: string,
   fromRoundOrder = 1,
@@ -1023,11 +1200,7 @@ function recalculateTournamentMatches(
     return rebuildDoubleEliminationMatches(matches, config, timestamp);
   }
 
-  return matches.map((match) => ({
-    ...match,
-    state: getMatchState(match, config),
-    updatedAt: timestamp,
-  }));
+  return rebuildRoundRobinMatches(matches, players, config, timestamp);
 }
 
 function getTournamentContext(dataset: SheetDataset, tournamentId: string) {
@@ -1155,6 +1328,7 @@ export async function createTournamentWithSchedule(input: CreateTournamentInput)
 
   const matches = recalculateTournamentMatches(
     createdMatches,
+    players,
     config,
     timestamp,
     1,
@@ -1292,6 +1466,7 @@ export async function adjustSetScore(input: AdjustSetScoreInput) {
 
   context.matches = recalculateTournamentMatches(
     context.matches,
+    context.players,
     context.config,
     timestamp,
     targetMatch.roundOrder,
@@ -1335,6 +1510,7 @@ export async function setSetScore(input: SetSetScoreInput) {
 
   context.matches = recalculateTournamentMatches(
     context.matches,
+    context.players,
     context.config,
     timestamp,
     targetMatch.roundOrder,
@@ -1386,6 +1562,7 @@ export async function addMatchSet(input: AddMatchSetInput) {
 
   context.matches = recalculateTournamentMatches(
     context.matches,
+    context.players,
     context.config,
     timestamp,
     targetMatch.roundOrder,
@@ -1426,6 +1603,7 @@ export async function overrideMatchTotal(input: OverrideMatchTotalInput) {
 
   context.matches = recalculateTournamentMatches(
     context.matches,
+    context.players,
     context.config,
     timestamp,
     targetMatch.roundOrder,

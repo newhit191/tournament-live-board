@@ -28,7 +28,7 @@ export function formatTournamentStatus(status: TournamentStatus) {
     case "completed":
       return "已完賽";
     case "archived":
-      return "歷史賽事";
+      return "已封存";
     default:
       return status;
   }
@@ -54,18 +54,18 @@ export function formatPlayerStatus(status: PlayerStatus) {
     case "eliminated":
       return "已淘汰";
     case "withdrawn":
-      return "未上場";
+      return "已退賽";
     default:
       return status;
   }
 }
 
 export function formatDataSource(source: "google-sheets" | "mock-data") {
-  return source === "google-sheets" ? "Google Sheets" : "內建展示資料";
+  return source === "google-sheets" ? "Google Sheets" : "本機示範資料";
 }
 
 export function formatScoringMode(mode: ScoringMode) {
-  return mode === "target_score" ? "目標分制" : "分局加總制";
+  return mode === "target_score" ? "目標分制" : "局數加總制";
 }
 
 export function formatScoringRule({
@@ -78,8 +78,8 @@ export function formatScoringRule({
   setCount: number | null;
 }) {
   if (scoringMode === "target_score") {
-    return `先達到 ${targetScore ?? "-"} 分即獲勝`;
+    return `先達到 ${targetScore ?? "-"} 分者獲勝`;
   }
 
-  return `固定 ${setCount ?? "-"} 局，全部打完後加總比分`;
+  return `共 ${setCount ?? "-"} 局，最終以各局分數加總決定勝負`;
 }

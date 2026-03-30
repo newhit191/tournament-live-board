@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const tournaments = await getTournamentSummaries();
   const liveTournament =
-    tournaments.find((tournament) => tournament.status === "live") ||
+    tournaments.find((tournament) => tournament.status === "live") ??
     tournaments[0];
   const history = tournaments.filter((tournament) => tournament.status !== "live");
 
@@ -36,7 +36,7 @@ export default async function Home() {
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-white/72">
                 專為 1 對 1 賽事打造，整合主辦方後台、公開展示頁與大螢幕模式，
-                支援單淘汰與循環賽，並可將比賽資料固定寫入 Google Sheets。
+                支援單淘汰、雙敗淘汰與循環賽，可將比賽資料固定寫入 Google Sheets。
               </p>
             </div>
 
@@ -127,12 +127,12 @@ export default async function Home() {
                   href={`/tournaments/${liveTournament.slug}`}
                   className="inline-flex rounded-full border border-white/14 px-5 py-3 text-sm tracking-[0.24em] text-white/85 transition hover:bg-white/8"
                 >
-                  查看賽事總覽
+                  查看賽事詳情
                 </Link>
               </div>
             ) : (
               <p className="mt-6 text-white/68">
-                目前尚無進行中賽事，建立新賽事後會出現在這裡。
+                目前沒有進行中的賽事，建立新賽事後會出現在這裡。
               </p>
             )}
           </div>
@@ -141,18 +141,18 @@ export default async function Home() {
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="panel rounded-[1.75rem] p-5 sm:p-6">
             <div>
-              <p className="eyebrow text-white/55">功能重點</p>
+              <p className="eyebrow text-white/55">操作流程</p>
               <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
-                即時更新、展示清楚、流程完整
+                從建立到展示一次完成
               </h2>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {[
-                "建立賽事後可快速輸入參賽者並產生單淘汰或循環賽程。",
-                "主辦方可指定目前展示中的場次，與大螢幕畫面同步。",
-                "支援目標分制與分局加總制，符合不同賽事規則。",
-                "所有比分與結果可固定寫入 Google Sheets 做紀錄。",
+                "建立賽事與參賽名單，選擇賽制與計分方式。",
+                "一鍵產生賽程，主辦方可指定目前公開展示場次。",
+                "比賽中可逐局記錄分數，系統自動推進賽程與排名。",
+                "公開頁同步更新即時比分、樹狀圖與完賽結果。",
               ].map((step, index) => (
                 <div
                   key={step}
@@ -170,7 +170,7 @@ export default async function Home() {
           <div className="panel rounded-[1.75rem] p-5 sm:p-6">
             <p className="eyebrow text-white/55">歷史賽事</p>
             <h2 className="mt-2 font-display text-4xl tracking-[0.08em] text-white">
-              快速回查過往結果
+              過往結果查詢
             </h2>
 
             <div className="mt-6 space-y-4">

@@ -1,4 +1,7 @@
-import { isInactiveGrandFinalResetMatch } from "@/lib/schedule-generator";
+import {
+  isInactiveGrandFinalResetMatch,
+  isRoundRobinPlayoffMatch,
+} from "@/lib/schedule-generator";
 import type {
   MatchSetRecord,
   PlayerRecord,
@@ -185,7 +188,8 @@ function buildStandings(
       match.player1.id.startsWith("pending:") ||
       match.player2.id.startsWith("pending:") ||
       match.player1.id.startsWith("bye:") ||
-      match.player2.id.startsWith("bye:")
+      match.player2.id.startsWith("bye:") ||
+      (record.format === "round_robin" && isRoundRobinPlayoffMatch(match))
     ) {
       continue;
     }
@@ -218,12 +222,29 @@ function buildStandings(
 
   return [...standings.values()]
     .toSorted((left, right) => {
+      const leftPointRatio =
+        left.pointsAgainst === 0
+          ? left.pointsFor === 0
+            ? 0
+            : Number.POSITIVE_INFINITY
+          : left.pointsFor / left.pointsAgainst;
+      const rightPointRatio =
+        right.pointsAgainst === 0
+          ? right.pointsFor === 0
+            ? 0
+            : Number.POSITIVE_INFINITY
+          : right.pointsFor / right.pointsAgainst;
+
       if (right.wins !== left.wins) {
         return right.wins - left.wins;
       }
 
       if (right.pointDiff !== left.pointDiff) {
         return right.pointDiff - left.pointDiff;
+      }
+
+      if (rightPointRatio !== leftPointRatio) {
+        return rightPointRatio - leftPointRatio;
       }
 
       if (right.pointsFor !== left.pointsFor) {

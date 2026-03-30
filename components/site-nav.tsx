@@ -19,7 +19,7 @@ export function SiteNav() {
               Tournament Live Board
             </p>
             <p className="truncate text-xs tracking-[0.3em] text-white/55">
-              專業賽事展示與控制台
+              賽事即時展示與操作中樞
             </p>
           </div>
         </Link>

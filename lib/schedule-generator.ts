@@ -35,6 +35,37 @@ function nextPowerOfTwo(value: number) {
   return current;
 }
 
+function createSeedOrder(bracketSize: number) {
+  let order = [1, 2];
+
+  while (order.length < bracketSize) {
+    const nextSize = order.length * 2;
+    const nextOrder: number[] = [];
+
+    for (const seed of order) {
+      nextOrder.push(seed, nextSize + 1 - seed);
+    }
+
+    order = nextOrder;
+  }
+
+  return order;
+}
+
+function createSeededBracketEntrants(
+  tournamentId: string,
+  entrants: string[],
+  bracketSize: number,
+  byePrefix: string,
+) {
+  const seededEntrants = Array.from({ length: bracketSize }, (_, index) =>
+    entrants[index] ?? createByeId(`${tournamentId}-${byePrefix}-${index + 1}`, 2),
+  );
+  const seedOrder = createSeedOrder(bracketSize);
+
+  return seedOrder.map((seed) => seededEntrants[seed - 1]);
+}
+
 function createSetRows(
   matchId: string,
   scoringMode: ScoringMode,
@@ -67,7 +98,7 @@ function getEliminationRoundName(matchCount: number) {
     case 16:
       return "32 強";
     default:
-      return `第 ${matchCount} 輪`;
+      return `${matchCount} 強`;
   }
 }
 
@@ -100,15 +131,37 @@ function createDoubleEliminationRoundName(
     return `敗部第 ${roundOrder} 輪`;
   }
 
-  return roundOrder === 1 ? "總決賽" : "總決賽重置戰";
+  return roundOrder === 1 ? "總冠軍賽" : "總冠軍賽重置戰";
 }
 
-export function isInactiveGrandFinalResetMatch(match: Pick<MatchRecord, "id" | "player1Id" | "player2Id">) {
+export function isInactiveGrandFinalResetMatch(
+  match: Pick<MatchRecord, "id" | "player1Id" | "player2Id">,
+) {
   return (
     match.id.endsWith("-de-gf-2") &&
     match.player1Id.startsWith("bye:gf2-inactive:") &&
     match.player2Id.startsWith("bye:gf2-inactive:")
   );
+}
+
+function resolveMatchId(match: Pick<MatchRecord, "id"> | string) {
+  return typeof match === "string" ? match : match.id;
+}
+
+export function isRoundRobinPlayoffMatch(match: Pick<MatchRecord, "id"> | string) {
+  return resolveMatchId(match).includes("-rr-po-");
+}
+
+export function isRoundRobinSemifinalMatch(match: Pick<MatchRecord, "id"> | string) {
+  return resolveMatchId(match).endsWith("-rr-po-sf");
+}
+
+export function isRoundRobinFinalMatch(match: Pick<MatchRecord, "id"> | string) {
+  return resolveMatchId(match).endsWith("-rr-po-f");
+}
+
+export function isRoundRobinRegularMatch(match: Pick<MatchRecord, "id"> | string) {
+  return !isRoundRobinPlayoffMatch(match);
 }
 
 export function generateSingleEliminationSchedule({
@@ -121,12 +174,12 @@ export function generateSingleEliminationSchedule({
 }: ScheduleOptions): MatchRecord[] {
   const orderedPlayers = randomize ? shuffle(players) : [...players];
   const bracketSize = nextPowerOfTwo(Math.max(2, orderedPlayers.length));
-  const paddedEntrants = [
-    ...orderedPlayers.map((player) => player.id),
-    ...Array.from({ length: bracketSize - orderedPlayers.length }, (_, index) =>
-      createByeId(`${tournamentId}-entry-${index + 1}`, 2),
-    ),
-  ];
+  const paddedEntrants = createSeededBracketEntrants(
+    tournamentId,
+    orderedPlayers.map((player) => player.id),
+    bracketSize,
+    "entry",
+  );
 
   const totalRounds = Math.log2(bracketSize);
   const matches: MatchRecord[] = [];
@@ -154,7 +207,7 @@ export function generateSingleEliminationSchedule({
           ...sets[0],
           player1Score: player1Id.startsWith("bye:") ? 0 : 1,
           player2Score: player2Id.startsWith("bye:") ? 0 : 1,
-          note: "輪空晉級",
+          note: "輪空自動晉級",
         };
       }
 
@@ -188,12 +241,12 @@ export function generateDoubleEliminationSchedule({
 }: ScheduleOptions): MatchRecord[] {
   const orderedPlayers = randomize ? shuffle(players) : [...players];
   const bracketSize = nextPowerOfTwo(Math.max(2, orderedPlayers.length));
-  const paddedEntrants = [
-    ...orderedPlayers.map((player) => player.id),
-    ...Array.from({ length: bracketSize - orderedPlayers.length }, (_, index) =>
-      createByeId(`${tournamentId}-de-entry-${index + 1}`, 2),
-    ),
-  ];
+  const paddedEntrants = createSeededBracketEntrants(
+    tournamentId,
+    orderedPlayers.map((player) => player.id),
+    bracketSize,
+    "de-entry",
+  );
 
   const totalWbRounds = Math.log2(bracketSize);
   const matches: MatchRecord[] = [];
@@ -220,7 +273,7 @@ export function generateDoubleEliminationSchedule({
           ...sets[0],
           player1Score: player1Id.startsWith("bye:") ? 0 : 1,
           player2Score: player2Id.startsWith("bye:") ? 0 : 1,
-          note: "輪空晉級",
+          note: "輪空自動晉級",
         };
       }
 
@@ -278,7 +331,7 @@ export function generateDoubleEliminationSchedule({
     player2Id: createPendingId(grandFinalId, 2),
     state: "scheduled",
     isFeatured: false,
-    scheduledLabel: "總決賽 / 場次 1",
+    scheduledLabel: "總冠軍賽 / 場次 1",
     updatedAt: startedAt,
     sets: createSetRows(grandFinalId, scoringMode, setCount, startedAt),
   });
@@ -287,7 +340,7 @@ export function generateDoubleEliminationSchedule({
   const resetSets = createSetRows(grandFinalResetId, scoringMode, setCount, startedAt);
   resetSets[0] = {
     ...resetSets[0],
-    note: "重置戰未啟用",
+    note: "重置戰待命",
   };
 
   matches.push({
@@ -300,7 +353,7 @@ export function generateDoubleEliminationSchedule({
     player2Id: createInactiveResetByeId(2),
     state: "completed",
     isFeatured: false,
-    scheduledLabel: "總決賽重置戰 / 場次 1",
+    scheduledLabel: "總冠軍賽重置戰 / 場次 1",
     updatedAt: startedAt,
     sets: resetSets,
   });
@@ -351,7 +404,7 @@ export function generateRoundRobinSchedule({
   const orderedPlayers = randomize ? shuffle(players) : [...players];
   const rounds = getRoundRobinRounds(orderedPlayers.map((player) => player.id));
 
-  return rounds.flatMap((pairs, roundIndex) =>
+  const regularSeasonMatches = rounds.flatMap((pairs, roundIndex) =>
     pairs.map(([player1Id, player2Id], matchIndex): MatchRecord => {
       const matchId = `${tournamentId}-rr-r${roundIndex + 1}-m${matchIndex + 1}`;
 
@@ -371,4 +424,47 @@ export function generateRoundRobinSchedule({
       };
     }),
   );
+
+  const playoffMatches: MatchRecord[] = [];
+  const playoffStartRound = rounds.length + 1;
+
+  if (orderedPlayers.length >= 3) {
+    const semifinalId = `${tournamentId}-rr-po-sf`;
+
+    playoffMatches.push({
+      id: semifinalId,
+      tournamentId,
+      roundName: "季後賽準決賽",
+      roundOrder: playoffStartRound,
+      matchOrder: 1,
+      player1Id: createPendingId(semifinalId, 1),
+      player2Id: createPendingId(semifinalId, 2),
+      state: "scheduled",
+      isFeatured: false,
+      scheduledLabel: "季後賽 / 2v3",
+      updatedAt: startedAt,
+      sets: createSetRows(semifinalId, scoringMode, setCount, startedAt),
+    });
+  }
+
+  if (orderedPlayers.length >= 2) {
+    const finalId = `${tournamentId}-rr-po-f`;
+
+    playoffMatches.push({
+      id: finalId,
+      tournamentId,
+      roundName: "季後賽冠軍賽",
+      roundOrder: playoffStartRound + (orderedPlayers.length >= 3 ? 1 : 0),
+      matchOrder: 1,
+      player1Id: createPendingId(finalId, 1),
+      player2Id: createPendingId(finalId, 2),
+      state: "scheduled",
+      isFeatured: false,
+      scheduledLabel: "季後賽 / 冠軍賽",
+      updatedAt: startedAt,
+      sets: createSetRows(finalId, scoringMode, setCount, startedAt),
+    });
+  }
+
+  return [...regularSeasonMatches, ...playoffMatches];
 }

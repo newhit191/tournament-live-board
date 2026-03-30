@@ -110,3 +110,200 @@ a {
   opacity: 0.55;
   content: "";
 }
+
+@keyframes livePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(241, 199, 109, 0.48);
+  }
+  55% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 18px rgba(241, 199, 109, 0),
+      0 0 14px rgba(241, 199, 109, 0.75);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(241, 199, 109, 0);
+  }
+}
+
+@keyframes scoreGlow {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.03);
+    text-shadow:
+      0 0 18px rgba(241, 199, 109, 0.45),
+      0 0 36px rgba(241, 199, 109, 0.28);
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.live-pulse {
+  animation: livePulse 2.4s ease-out infinite;
+}
+
+.score-glow {
+  animation: scoreGlow 2.2s ease-in-out infinite;
+}
+
+.scan-highlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-highlight::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(91, 231, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(241, 199, 109, 0.08) 72%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  animation: scanLine 2.8s linear infinite;
+  content: "";
+  pointer-events: none;
+}
+
+@keyframes matchEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes winnerCelebrate {
+  0% {
+    box-shadow:
+      0 0 0 rgba(241, 199, 109, 0),
+      inset 0 0 0 rgba(241, 199, 109, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(241, 199, 109, 0.28),
+      inset 0 0 32px rgba(241, 199, 109, 0.12);
+  }
+  100% {
+    box-shadow:
+      0 0 0 rgba(241, 199, 109, 0),
+      inset 0 0 0 rgba(241, 199, 109, 0);
+  }
+}
+
+@keyframes bracketFlow {
+  0% {
+    background-position: -220px 0;
+    opacity: 0.25;
+  }
+  45% {
+    opacity: 0.92;
+  }
+  100% {
+    background-position: 220px 0;
+    opacity: 0.25;
+  }
+}
+
+@keyframes cardRise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes advanceGlow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 rgba(241, 199, 109, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 24px rgba(241, 199, 109, 0.16);
+  }
+}
+
+.match-transition-enter {
+  animation: matchEnter 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.winner-spotlight {
+  border-color: rgba(241, 199, 109, 0.58);
+  background:
+    radial-gradient(circle at top, rgba(241, 199, 109, 0.16), transparent 62%),
+    rgba(255, 255, 255, 0.05);
+  animation: winnerCelebrate 1.6s ease-out 1;
+}
+
+.bracket-stage .bracket-card-animate {
+  animation: cardRise 420ms ease-out both;
+}
+
+.bracket-stage .current-bracket-card {
+  box-shadow: 0 0 26px rgba(241, 199, 109, 0.24);
+}
+
+.bracket-flow-line {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(241, 199, 109, 0.96) 50%,
+      rgba(255, 255, 255, 0.2) 100%
+    );
+  background-size: 220px 2px;
+  box-shadow: 0 0 10px rgba(241, 199, 109, 0.45);
+  animation: bracketFlow 2.4s linear infinite;
+}
+
+.advance-glow {
+  animation: advanceGlow 2.4s ease-in-out infinite;
+}
+
+.winner-result-banner {
+  background:
+    linear-gradient(135deg, rgba(241, 199, 109, 0.16), rgba(241, 199, 109, 0.03)),
+    rgba(11, 19, 33, 0.65);
+  box-shadow: 0 0 24px rgba(241, 199, 109, 0.22);
+  animation: winnerCelebrate 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-pulse,
+  .score-glow,
+  .scan-highlight::before,
+  .match-transition-enter,
+  .winner-spotlight,
+  .bracket-stage .bracket-card-animate,
+  .bracket-flow-line,
+  .advance-glow {
+    animation: none !important;
+  }
+}
