@@ -36,6 +36,11 @@ const TRACKS: Track[] = [
     title: "mixkit sports highlights 51",
     src: "/bgm/mixkit-sports-highlights-51.mp3",
   },
+  {
+    id: "three-second-bond",
+    title: "三秒羈絆",
+    src: "/bgm/three-second-bond.mp3",
+  },
 ];
 
 function clamp(value: number, min: number, max: number) {
