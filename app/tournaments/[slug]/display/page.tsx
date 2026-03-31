@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DisplayAutoRefresh } from "@/components/display-auto-refresh";
+import { LiveArenaBackdrop } from "@/components/live-arena-backdrop";
 import { MatchTransitionShell } from "@/components/match-transition-shell";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { TournamentStructure } from "@/components/tournament-structure";
@@ -23,6 +24,7 @@ export default async function TournamentDisplayPage({ params }: DisplayPageProps
   }
 
   const currentMatch = tournament.currentMatch;
+  const isArenaActive = tournament.status === "live" && currentMatch?.state !== "completed";
 
   if (!currentMatch) {
     return (
@@ -179,9 +181,14 @@ export default async function TournamentDisplayPage({ params }: DisplayPageProps
           </div>
         </section>
 
-        <section className="panel-strong score-rim scan-highlight rounded-[2rem] px-5 py-6 sm:px-7">
+        <section
+          className={`panel-strong score-rim scan-highlight arena-live-stage relative rounded-[2rem] px-5 py-6 sm:px-7 ${
+            isArenaActive ? "arena-live-stage-active" : ""
+          }`}
+        >
+          <LiveArenaBackdrop active={isArenaActive} />
           <MatchTransitionShell key={currentMatch.id}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="relative z-[1] flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="eyebrow text-amber-200">目前賽事 LIVE</p>
                 <h2 className="mt-2 font-display text-[clamp(1.8rem,4.5vw,3.2rem)] tracking-[0.06em] text-white">
@@ -199,11 +206,11 @@ export default async function TournamentDisplayPage({ params }: DisplayPageProps
               </div>
             </div>
 
-            <div className="mt-4 rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/72">
+            <div className="relative z-[1] mt-4 rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/72">
               {formatScoringRule(tournament)}
             </div>
 
-            <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
+            <div className="relative z-[1] mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
               <ScorePanel
                 sideLabel="選手 1"
                 name={currentMatch.player1.displayName}
@@ -228,7 +235,7 @@ export default async function TournamentDisplayPage({ params }: DisplayPageProps
             </div>
 
             {tournament.scoringMode === "set_total" || currentMatch.sets.length > 1 ? (
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="relative z-[1] mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {currentMatch.sets.map((set) => (
                   <div
                     key={set.id}
@@ -246,7 +253,7 @@ export default async function TournamentDisplayPage({ params }: DisplayPageProps
             ) : null}
 
             {latestCompletedMatch && latestWinnerName ? (
-              <div className="winner-result-banner mt-6 rounded-2xl border border-amber-300/35 px-4 py-3">
+              <div className="winner-result-banner relative z-[1] mt-6 rounded-2xl border border-amber-300/35 px-4 py-3">
                 <p className="text-xs tracking-[0.24em] text-amber-100/85">
                   上一場完賽勝者
                 </p>
@@ -352,26 +359,24 @@ function ScorePanel({
   isWinner: boolean;
 }) {
   return (
-    <div
-      className={`min-w-0 rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-4 text-center sm:p-5 ${
-        isWinner ? "winner-spotlight" : ""
-      }`}
-    >
-      <p className="text-sm tracking-[0.24em] text-white/45">
-        {sideLabel}
-        {isWinner ? " ・ WINNER" : ""}
-      </p>
-      <div className="mt-3 flex items-center justify-center">
-        <PlayerAvatar name={name} sizeClassName="h-14 w-14" />
+    <div className={`arena-player-pod min-w-0 text-center ${isWinner ? "arena-player-winner" : ""}`}>
+      <div className="arena-player-core mx-auto">
+        <p className="text-sm tracking-[0.24em] text-white/55">
+          {sideLabel}
+          {isWinner ? " ・ WINNER" : ""}
+        </p>
+        <div className="mt-3 flex items-center justify-center">
+          <PlayerAvatar name={name} sizeClassName="h-14 w-14" />
+        </div>
+        <h3 className="mt-2 break-words font-display text-[clamp(1.8rem,3vw,3rem)] leading-tight tracking-[0.06em] text-white">
+          {name}
+        </h3>
+        <p
+          className={`score-glow mt-3 font-display text-[clamp(3.3rem,7vw,6.5rem)] leading-none tracking-[0.1em] ${accentClass}`}
+        >
+          {score}
+        </p>
       </div>
-      <h3 className="mt-2 break-words font-display text-[clamp(1.8rem,3vw,3rem)] leading-tight tracking-[0.06em] text-white">
-        {name}
-      </h3>
-      <p
-        className={`score-glow mt-3 font-display text-[clamp(3.3rem,7vw,6.5rem)] leading-none tracking-[0.1em] ${accentClass}`}
-      >
-        {score}
-      </p>
     </div>
   );
 }
