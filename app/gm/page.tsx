@@ -213,13 +213,16 @@ export default async function GmPage() {
 
   try {
     return await GmPageContent();
-  } catch {
+  } catch (error) {
+    const detail =
+      error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (
       <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <SupabaseSetupNotice
           title="GM 後台資料載入失敗"
           description="請確認 Supabase migration 已完整執行，再檢查 Vercel Runtime Logs。"
           requireServiceRole
+          debugMessage={detail}
         />
       </main>
     );

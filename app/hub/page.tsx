@@ -534,7 +534,9 @@ export default async function HubPage() {
 
   try {
     return await HubPageContent();
-  } catch {
+  } catch (error) {
+    const detail =
+      error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (
       <div className="min-h-screen pb-24 safe-bottom-pad">
         <SiteNav />
@@ -543,6 +545,7 @@ export default async function HubPage() {
             title="玩家中心資料尚未完成初始化"
             description="目前可進入首頁，但玩家中心讀取失敗。請確認 Supabase migration 已完整執行，並檢查 Vercel Runtime Logs。"
             requireServiceRole
+            debugMessage={detail}
           />
         </main>
       </div>

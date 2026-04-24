@@ -6,12 +6,14 @@ type SupabaseSetupNoticeProps = {
   title?: string;
   description?: string;
   requireServiceRole?: boolean;
+  debugMessage?: string | null;
 };
 
 export function SupabaseSetupNotice({
   title = "目前系統尚未完成 Supabase 設定",
   description = "此頁需要 Supabase 環境變數才能正常讀取資料，請先在 Vercel 專案補齊設定後重新整理。",
   requireServiceRole = false,
+  debugMessage = null,
 }: SupabaseSetupNoticeProps) {
   const required = requireServiceRole
     ? getMissingSupabaseEnvs()
@@ -35,6 +37,13 @@ export function SupabaseSetupNotice({
           <p className="mt-2 text-sm text-emerald-200">公開環境變數已就緒，若仍異常請查看 Vercel Deploy Logs。</p>
         )}
       </div>
+
+      {debugMessage ? (
+        <div className="mt-4 rounded-2xl border border-rose-300/28 bg-rose-300/10 px-4 py-3">
+          <p className="text-xs tracking-[0.2em] text-rose-100/80">Runtime 錯誤</p>
+          <p className="mt-2 break-all text-xs leading-6 text-rose-100/92">{debugMessage}</p>
+        </div>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link

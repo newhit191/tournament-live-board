@@ -150,7 +150,9 @@ export default async function ArenaPage({
 
   try {
     return await ArenaPageContent({ searchParams });
-  } catch {
+  } catch (error) {
+    const detail =
+      error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (
       <div className="min-h-screen pb-24 safe-bottom-pad">
         <SiteNav />
@@ -159,6 +161,7 @@ export default async function ArenaPage({
             title="約戰資料載入失敗"
             description="請確認 Supabase migration 已完成，並檢查 Vercel Runtime Logs 的第一個錯誤。"
             requireServiceRole
+            debugMessage={detail}
           />
         </main>
       </div>

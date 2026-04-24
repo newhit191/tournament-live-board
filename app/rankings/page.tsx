@@ -142,7 +142,9 @@ export default async function RankingsPage({
 
   try {
     return await RankingsPageContent({ searchParams });
-  } catch {
+  } catch (error) {
+    const detail =
+      error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (
       <div className="min-h-screen pb-24 safe-bottom-pad">
         <SiteNav />
@@ -151,6 +153,7 @@ export default async function RankingsPage({
             title="排行榜資料載入失敗"
             description="請確認 Supabase migration 已完成，並檢查 Vercel Runtime Logs。"
             requireServiceRole
+            debugMessage={detail}
           />
         </main>
       </div>
