@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { bootstrapAccountAndPrimaryPlayer } from "@/lib/account-bootstrap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
@@ -34,6 +35,14 @@ export async function signInAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return {
+      error: "登入系統尚未完成設定，請稍後再試或聯繫管理者。",
+      success: null,
+    };
+  }
+
   const safeNextPath = getSafeNextPath(String(formData.get("nextPath") ?? ""));
   const parsed = signInSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
@@ -60,12 +69,16 @@ export async function signInAction(
     };
   }
 
-  await bootstrapAccountAndPrimaryPlayer({
-    userId: data.user.id,
-    email: data.user.email ?? parsed.data.email,
-    displayName:
-      (data.user.user_metadata as { display_name?: string } | null)?.display_name ?? null,
-  });
+  try {
+    await bootstrapAccountAndPrimaryPlayer({
+      userId: data.user.id,
+      email: data.user.email ?? parsed.data.email,
+      displayName:
+        (data.user.user_metadata as { display_name?: string } | null)?.display_name ?? null,
+    });
+  } catch {
+    // 帳號已登入成功，初始化失敗時不直接中斷登入流程。
+  }
 
   if (safeNextPath) {
     redirect(safeNextPath);
@@ -77,6 +90,14 @@ export async function signUpWithInviteAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return {
+      error: "註冊系統尚未完成設定，請稍後再試或聯繫管理者。",
+      success: null,
+    };
+  }
+
   const parsed = signUpSchema.safeParse({
     displayName: String(formData.get("displayName") ?? ""),
     inviteCode: String(formData.get("inviteCode") ?? "").toUpperCase(),
@@ -196,6 +217,11 @@ export async function signUpWithInviteAction(
 }
 
 export async function signOutAction() {
+  const config = getSupabaseConfig();
+  if (!config.isReady) {
+    redirect("/auth");
+  }
+
   const client = await createSupabaseServerClient();
   await client.auth.signOut();
   redirect("/auth");

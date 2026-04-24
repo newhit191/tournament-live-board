@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SiteNav } from "@/components/site-nav";
+import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
 import { loadLeaderboard } from "@/lib/arena-service";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +13,7 @@ export const metadata = {
   title: "排行榜",
 };
 
-export default async function RankingsPage({
+async function RankingsPageContent({
   searchParams,
 }: {
   searchParams: Promise<{ scope?: string }>;
@@ -115,4 +117,43 @@ export default async function RankingsPage({
       </main>
     </div>
   );
+}
+
+export default async function RankingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scope?: string }>;
+}) {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="排行榜尚未就緒"
+            description="排行榜需要 Supabase 公開金鑰與 Service Role 金鑰，請先完成 Vercel 環境變數。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
+
+  try {
+    return await RankingsPageContent({ searchParams });
+  } catch {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="排行榜資料載入失敗"
+            description="請確認 Supabase migration 已完成，並檢查 Vercel Runtime Logs。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
 }

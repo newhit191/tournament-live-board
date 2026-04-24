@@ -3,13 +3,15 @@ import { notFound, redirect } from "next/navigation";
 
 import { ArenaDetailControls } from "@/app/arena/[id]/arena-detail-controls";
 import { SiteNav } from "@/components/site-nav";
+import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
 import { loadAccountRole, loadArenaChallengeDetail, loadPlayersByOwner } from "@/lib/arena-service";
 import type { ArenaParticipantResult, ChallengeCompetitionFormat } from "@/lib/arena-types";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function ArenaDetailPage({
+async function ArenaDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -148,6 +150,45 @@ export default async function ArenaDetailPage({
       </main>
     </div>
   );
+}
+
+export default async function ArenaDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="對戰詳情尚未就緒"
+            description="此頁需要 Supabase 公開金鑰與 Service Role 金鑰，請先補齊環境變數。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
+
+  try {
+    return await ArenaDetailPageContent({ params });
+  } catch {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="對戰詳情載入失敗"
+            description="請確認 Supabase migration 已完成，並檢查 Vercel Runtime Logs。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {

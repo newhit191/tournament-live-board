@@ -5,8 +5,10 @@ import { HubControls } from "@/app/hub/hub-controls";
 import { logoutFromHubAction } from "@/app/hub/actions";
 import { SiteNav } from "@/components/site-nav";
 import { PlayerQuickQr } from "@/components/player-quick-qr";
+import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
 import { bootstrapAccountAndPrimaryPlayer } from "@/lib/account-bootstrap";
 import { loadLeaderboard } from "@/lib/arena-service";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -101,7 +103,7 @@ function formatLedgerEvent(entry: WalletLedgerRow) {
   return ledgerEventLabels[entry.event_type] ?? entry.event_type;
 }
 
-export default async function HubPage() {
+async function HubPageContent() {
   const client = await createSupabaseServerClient();
   const {
     data: { user },
@@ -511,6 +513,41 @@ export default async function HubPage() {
       </main>
     </div>
   );
+}
+
+export default async function HubPage() {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="玩家中心尚未就緒"
+            description="玩家中心需要 Supabase 公開金鑰與 Service Role 金鑰，請在 Vercel 環境變數補齊後重新整理。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
+
+  try {
+    return await HubPageContent();
+  } catch {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="玩家中心資料尚未完成初始化"
+            description="目前可進入首頁，但玩家中心讀取失敗。請確認 Supabase migration 已完整執行，並檢查 Vercel Runtime Logs。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
 }
 
 function InfoBlock({ label, value }: { label: string; value: string }) {

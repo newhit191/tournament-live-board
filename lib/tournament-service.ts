@@ -45,13 +45,16 @@ async function loadTournamentViews(): Promise<TournamentView[]> {
       cache.data = views;
       cache.expiresAt = Date.now() + CACHE_TTL_MS;
       return views;
-    } catch (error) {
+    } catch {
       if (cache.data) {
         cache.expiresAt = Date.now() + CACHE_TTL_MS;
         return cache.data;
       }
 
-      throw error;
+      const fallbackViews = sortTournamentsByStatus(mockTournaments.map(buildTournamentView));
+      cache.data = fallbackViews;
+      cache.expiresAt = Date.now() + CACHE_TTL_MS;
+      return fallbackViews;
     }
   })();
 

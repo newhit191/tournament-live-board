@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GmAdjustForm } from "@/app/gm/gm-adjust-form";
+import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +29,7 @@ type AccountRow = {
   role: "user" | "gm" | "admin";
 };
 
-export default async function GmPage() {
+async function GmPageContent() {
   const client = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
   const {
@@ -193,4 +195,33 @@ export default async function GmPage() {
       </section>
     </main>
   );
+}
+
+export default async function GmPage() {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <SupabaseSetupNotice
+          title="GM 後台尚未就緒"
+          description="GM 後台需要 Supabase 公開金鑰與 Service Role 金鑰。請先補齊環境變數後重整。"
+          requireServiceRole
+        />
+      </main>
+    );
+  }
+
+  try {
+    return await GmPageContent();
+  } catch {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <SupabaseSetupNotice
+          title="GM 後台資料載入失敗"
+          description="請確認 Supabase migration 已完整執行，再檢查 Vercel Runtime Logs。"
+          requireServiceRole
+        />
+      </main>
+    );
+  }
 }

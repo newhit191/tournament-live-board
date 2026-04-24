@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 
 import { ArenaCreateForm } from "@/app/arena/arena-create-form";
 import { SiteNav } from "@/components/site-nav";
+import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
 import {
   loadArenaChallenges,
   loadArenaPlayerById,
   loadPlayersByOwner,
 } from "@/lib/arena-service";
 import type { ChallengeCompetitionFormat } from "@/lib/arena-types";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export const metadata = {
   title: "約戰看板",
 };
 
-export default async function ArenaPage({
+async function ArenaPageContent({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -119,6 +121,49 @@ export default async function ArenaPage({
       </main>
     </div>
   );
+}
+
+export default async function ArenaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    mode?: string;
+    hostPlayerId?: string;
+    duelPlayerId?: string;
+  }>;
+}) {
+  const config = getSupabaseConfig();
+  if (!config.isReady || !config.isServiceReady) {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="約戰系統尚未就緒"
+            description="約戰頁需要 Supabase 公開金鑰與 Service Role 金鑰，請先在 Vercel 補齊環境變數。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
+
+  try {
+    return await ArenaPageContent({ searchParams });
+  } catch {
+    return (
+      <div className="min-h-screen pb-24 safe-bottom-pad">
+        <SiteNav />
+        <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <SupabaseSetupNotice
+            title="約戰資料載入失敗"
+            description="請確認 Supabase migration 已完成，並檢查 Vercel Runtime Logs 的第一個錯誤。"
+            requireServiceRole
+          />
+        </main>
+      </div>
+    );
+  }
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
