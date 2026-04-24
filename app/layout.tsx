@@ -17,7 +17,18 @@ const teko = Teko({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: (() => {
+    const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (!raw) {
+      return new URL("http://localhost:3000");
+    }
+
+    try {
+      return new URL(raw);
+    } catch {
+      return new URL("http://localhost:3000");
+    }
+  })(),
   title: {
     default: "Tournament Live Board | 戰鬥陀螺競技平台",
     template: "%s | Tournament Live Board",
