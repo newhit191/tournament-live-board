@@ -138,8 +138,8 @@ export function BackgroundMusicPlayer() {
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50">
-      <div className="pointer-events-auto rounded-2xl border border-white/15 bg-black/60 p-3 shadow-2xl backdrop-blur-xl">
+    <div className="pointer-events-none fixed bottom-3 right-3 z-50 w-[min(92vw,360px)] safe-bottom-pad sm:bottom-4 sm:right-4">
+      <div className="pointer-events-auto w-full rounded-2xl border border-white/15 bg-black/60 p-3 shadow-2xl backdrop-blur-xl">
         <audio
           id="tlb-bgm-audio"
           src={activeTrack.src}
@@ -151,12 +151,12 @@ export function BackgroundMusicPlayer() {
           }}
         />
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setExpanded((current) => !current)}
-            className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-[0.2em] text-white/80 transition hover:bg-white/10"
-          >
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setExpanded((current) => !current)}
+              className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-[0.2em] text-white/80 transition hover:bg-white/10"
+            >
             BGM
           </button>
 
@@ -191,7 +191,7 @@ export function BackgroundMusicPlayer() {
         </div>
 
         {expanded ? (
-          <div className="mt-3 w-[300px] space-y-2 border-t border-white/10 pt-3">
+          <div className="mt-3 w-full space-y-2 border-t border-white/10 pt-3 sm:w-[320px]">
             <p className="truncate text-xs tracking-[0.22em] text-cyan-200">
               目前播放：{activeTrack.title}
             </p>

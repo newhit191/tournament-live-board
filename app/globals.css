@@ -47,7 +47,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body::before {
@@ -68,6 +68,72 @@ a {
   text-decoration: none;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+select {
+  color-scheme: dark;
+  color: #f8fafc;
+}
+
+select option {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+select option[value=""] {
+  color: #94a3b8;
+}
+
+select option:checked {
+  background-color: #1d4ed8;
+  color: #f8fafc;
+}
+
+.tlb-select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #94a3b8 50%),
+    linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% - 2px),
+    calc(100% - 16px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.6rem;
+}
+
+.tlb-select option {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.tlb-select option[value=""] {
+  color: #94a3b8;
+}
+
+.tlb-select option:checked {
+  background-color: #1d4ed8;
+  color: #f8fafc;
+}
+
+.safe-bottom-pad {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.8);
+}
+
 ::selection {
   background: rgba(255, 107, 44, 0.4);
   color: white;
@@ -78,6 +144,8 @@ a {
   background: var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(20px);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .panel-strong {
@@ -85,6 +153,14 @@ a {
   background: var(--panel-strong);
   box-shadow: var(--shadow);
   backdrop-filter: blur(24px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+main,
+section,
+article {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -92,6 +168,15 @@ a {
   font-size: 0.95rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .score-rim {
@@ -816,6 +901,28 @@ a {
     rgba(11, 19, 33, 0.65);
   box-shadow: 0 0 24px rgba(241, 199, 109, 0.22);
   animation: winnerCelebrate 2s ease-in-out infinite;
+}
+
+@media (max-width: 640px) {
+  .eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+  }
+
+  .arena-player-core {
+    border-radius: 1.2rem;
+    padding: 0.75rem 0.65rem 0.85rem;
+  }
+
+  .arena-shell {
+    width: min(120vw, 900px);
+    height: min(92vw, 680px);
+  }
+
+  .arena-shell-glass {
+    width: min(112vw, 820px);
+    height: min(84vw, 610px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

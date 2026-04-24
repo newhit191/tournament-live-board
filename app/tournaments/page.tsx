@@ -21,7 +21,7 @@ export default async function TournamentsPage() {
   const history = tournaments.filter((tournament) => tournament.status !== "live");
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="min-h-screen pb-24 safe-bottom-pad">
       <SiteNav />
 
       <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-12 pt-8 sm:px-6 lg:px-8">

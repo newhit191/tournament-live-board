@@ -146,7 +146,7 @@ function DoubleEliminationLane({
     return null;
   }
 
-  const columnWidthClass = compact ? "w-[220px] sm:w-[240px]" : "w-[280px]";
+  const columnWidthClass = compact ? "w-[min(82vw,240px)] sm:w-[240px]" : "w-[min(86vw,280px)] sm:w-[280px]";
   const cardHeight = compact ? 212 : 188;
 
   return (
@@ -190,7 +190,7 @@ function SingleEliminationBracket({
   detailBasePath,
 }: TournamentStructureProps) {
   const rounds = groupMatchesByRound(tournament.matches);
-  const columnWidthClass = compact ? "w-[220px] sm:w-[240px]" : "w-[280px]";
+  const columnWidthClass = compact ? "w-[min(82vw,240px)] sm:w-[240px]" : "w-[min(86vw,280px)] sm:w-[280px]";
   const columnGapClass = compact ? "gap-4" : "gap-6";
 
   return (
@@ -586,7 +586,7 @@ function BracketMatchCard({
   return (
     <Link
       href={href}
-      className={`group bracket-card-animate block overflow-hidden rounded-[1.5rem] border px-4 py-4 transition ${
+      className={`group bracket-card-animate relative block overflow-hidden rounded-[1.5rem] border px-4 py-4 transition ${
         isCurrent
           ? "current-bracket-card border-amber-300/35 bg-amber-300/10"
           : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]"

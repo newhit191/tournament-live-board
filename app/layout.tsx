@@ -17,13 +17,13 @@ const teko = Teko({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tournament-live-board.local"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
-    default: "Tournament Live Board | 即時賽事展示系統",
+    default: "Tournament Live Board | 戰鬥陀螺競技平台",
     template: "%s | Tournament Live Board",
   },
   description:
-    "結合主辦方後台與公開展示頁的賽事系統，支援單淘汰、雙敗淘汰、循環賽與即時比分更新。",
+    "專為戰鬥陀螺社群打造的即時賽事平台，支援家庭多玩家、邀請碼註冊、星星帳本與大螢幕展示。",
 };
 
 export default function RootLayout({
