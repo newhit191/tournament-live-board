@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, redirect, unstable_rethrow } from "next/navigation";
 
 import { ArenaDetailControls } from "@/app/arena/[id]/arena-detail-controls";
 import { SiteNav } from "@/components/site-nav";
@@ -176,6 +176,7 @@ export default async function ArenaDetailPage({
   try {
     return await ArenaDetailPageContent({ params });
   } catch (error) {
+    unstable_rethrow(error);
     const detail =
       error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (

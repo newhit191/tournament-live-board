@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { SiteNav } from "@/components/site-nav";
 import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
@@ -143,6 +143,7 @@ export default async function RankingsPage({
   try {
     return await RankingsPageContent({ searchParams });
   } catch (error) {
+    unstable_rethrow(error);
     const detail =
       error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { HubControls } from "@/app/hub/hub-controls";
 import { logoutFromHubAction } from "@/app/hub/actions";
@@ -535,6 +535,7 @@ export default async function HubPage() {
   try {
     return await HubPageContent();
   } catch (error) {
+    unstable_rethrow(error);
     const detail =
       error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (

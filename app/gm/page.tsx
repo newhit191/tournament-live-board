@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { GmAdjustForm } from "@/app/gm/gm-adjust-form";
 import { SupabaseSetupNotice } from "@/components/supabase-setup-notice";
@@ -214,6 +214,7 @@ export default async function GmPage() {
   try {
     return await GmPageContent();
   } catch (error) {
+    unstable_rethrow(error);
     const detail =
       error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
     return (
