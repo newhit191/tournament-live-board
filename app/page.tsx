@@ -25,7 +25,7 @@ export default async function HomePage() {
             即時對戰、星星結算、排行同步
           </h1>
           <p className="mt-5 max-w-3xl text-base leading-8 text-white/72 sm:text-lg">
-            支援邀請碼註冊、家庭多玩家、GM 補星與不可逆帳本。你可以用同一支手機，帶著自己和小孩一起參賽，且每位玩家都有獨立戰績與星星資產。
+            支援直接註冊、家庭多玩家、GM 補星與不可逆帳本。你可以用同一支手機，帶著自己和小孩一起參賽，且每位玩家都有獨立戰績與星星資產。
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -65,7 +65,7 @@ export default async function HomePage() {
         <section className="grid gap-4 sm:grid-cols-3">
           <StatCard label="進行中賽事" value={`${liveCount}`} hint="可指定主舞台展示" />
           <StatCard label="歷史賽事" value={`${historyCount}`} hint="可回看結果與紀錄" />
-          <StatCard label="帳號系統" value="邀請碼制" hint="Email + 密碼登入" />
+          <StatCard label="帳號系統" value="直接註冊制" hint="Email + 密碼登入" />
         </section>
 
         <section className="panel rounded-[1.75rem] p-5 sm:p-6">

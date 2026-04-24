@@ -2,11 +2,7 @@
 
 import { useActionState, useState } from "react";
 
-import {
-  signInAction,
-  signUpWithInviteAction,
-  type AuthActionState,
-} from "@/app/auth/actions";
+import { signInAction, signUpWithInviteAction, type AuthActionState } from "@/app/auth/actions";
 
 type AuthTab = "signin" | "signup";
 
@@ -28,25 +24,17 @@ export function AuthPanel({ nextPath }: { nextPath: string }) {
 
   return (
     <div className="panel-strong mx-auto w-full max-w-xl rounded-[2rem] p-6 sm:p-8">
-      <p className="eyebrow text-cyan-200">玩家帳號</p>
+      <p className="eyebrow text-cyan-200">玩家登入</p>
       <h1 className="mt-3 font-display text-4xl tracking-[0.08em] text-white sm:text-5xl">
-        登入與註冊
+        登入你的戰場身份
       </h1>
       <p className="mt-4 text-sm leading-7 text-white/70 sm:text-base">
-        使用邀請碼建立帳號後，你可以在同一帳號內管理多位玩家（例如自己與小孩），並直接參與正式對戰與排行榜。
+        現在可直接註冊，不需要邀請碼。註冊後你可以在同一帳號內管理多位玩家（例如自己與小孩），並參與約戰、排行榜與賽事系統。
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-2 rounded-full border border-white/12 bg-white/[0.04] p-1">
-        <TabButton
-          active={tab === "signin"}
-          onClick={() => setTab("signin")}
-          label="登入"
-        />
-        <TabButton
-          active={tab === "signup"}
-          onClick={() => setTab("signup")}
-          label="邀請碼註冊"
-        />
+        <TabButton active={tab === "signin"} onClick={() => setTab("signin")} label="登入" />
+        <TabButton active={tab === "signup"} onClick={() => setTab("signup")} label="註冊" />
       </div>
 
       {tab === "signin" ? (
@@ -117,10 +105,7 @@ function AuthForm({
       {safeNextPath ? <input type="hidden" name="nextPath" value={safeNextPath} /> : null}
 
       {mode === "signup" ? (
-        <>
-          <Field label="顯示名稱" name="displayName" placeholder="例如：阿哲 / 小宇" />
-          <Field label="邀請碼" name="inviteCode" placeholder="例如：BLADE-FRIEND-001" />
-        </>
+        <Field label="顯示名稱" name="displayName" placeholder="例如：小龍 / 阿哲" />
       ) : null}
 
       <Field label="Email" name="email" type="email" placeholder="you@example.com" />
@@ -128,7 +113,7 @@ function AuthForm({
         label="密碼"
         name="password"
         type="password"
-        placeholder={mode === "signup" ? "至少 6 個字元" : "輸入你的密碼"}
+        placeholder={mode === "signup" ? "至少 6 個字元" : "請輸入你的密碼"}
       />
 
       {state.error ? (
@@ -178,3 +163,4 @@ function Field({
     </label>
   );
 }
+

@@ -10,6 +10,7 @@
     "setup:sheets": "node scripts/init-google-sheet.mjs",
     "seed:demo": "node scripts/seed-demo-data.mjs",
     "clear:sheets": "node scripts/clear-sheet-data.mjs",
+    "clear:supabase": "node scripts/clear-supabase-data.mjs",
     "migrate:player-avatar": "node scripts/run_migration_add_player_avatar_url.mjs"
   },
   "dependencies": {

@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: "%s | Tournament Live Board",
   },
   description:
-    "專為戰鬥陀螺社群打造的即時賽事平台，支援家庭多玩家、邀請碼註冊、星星帳本與大螢幕展示。",
+    "專為戰鬥陀螺社群打造的即時賽事平台，支援家庭多玩家、直接註冊、星星帳本與大螢幕展示。",
 };
 
 export default function RootLayout({
