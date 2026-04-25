@@ -105,6 +105,7 @@ export async function loadAccountRole(accountId: string) {
 }
 
 export async function loadArenaChallenges(limit = 80): Promise<ArenaChallenge[]> {
+  try {
   const admin = createSupabaseAdminClient();
 
   const { data: challengesRaw, error: challengeError } = await admin
@@ -289,6 +290,12 @@ export async function loadArenaChallenges(limit = 80): Promise<ArenaChallenge[]>
     participants: participantMap.get(row.id) ?? [],
     matches: matchMap.get(row.id) ?? [],
   }));
+  } catch (error) {
+    if (isSupabaseInvalidApiKeyError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function loadArenaChallengeDetail(challengeId: string) {
@@ -451,6 +458,7 @@ async function syncDynamicTitles(
 }
 
 export async function loadLeaderboard(scope: "overall" | "cross_family") {
+  try {
   const admin = createSupabaseAdminClient();
 
   const { data: playersRaw, error: playersError } = await admin
@@ -557,4 +565,10 @@ export async function loadLeaderboard(scope: "overall" | "cross_family") {
   });
 
   return rows;
+  } catch (error) {
+    if (isSupabaseInvalidApiKeyError(error)) {
+      return [] satisfies LeaderboardEntry[];
+    }
+    throw error;
+  }
 }
