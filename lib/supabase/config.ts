@@ -10,16 +10,39 @@ function readEnv(name: string) {
   return raw;
 }
 
+function looksLikeUrl(value: string) {
+  return /^https?:\/\//i.test(value);
+}
+
+function sanitizeSupabaseUrl(value: string) {
+  if (!value) return "";
+  if (!looksLikeUrl(value)) return "";
+  return value.replace(/\/+$/, "");
+}
+
+function sanitizeSupabaseKey(value: string) {
+  if (!value) return "";
+  // 防呆：有人把 URL 貼到 key 欄位時，直接視為無效 key
+  if (looksLikeUrl(value)) return "";
+  return value;
+}
+
 export function getSupabaseConfig() {
-  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL") || readEnv("SUPABASE_URL");
-  const anonKey =
+  const url = sanitizeSupabaseUrl(
+    readEnv("NEXT_PUBLIC_SUPABASE_URL") || readEnv("SUPABASE_URL"),
+  );
+
+  const anonKey = sanitizeSupabaseKey(
     readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
-    readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
-    readEnv("SUPABASE_ANON_KEY");
-  const serviceRoleKey =
+      readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
+      readEnv("SUPABASE_ANON_KEY"),
+  );
+
+  const serviceRoleKey = sanitizeSupabaseKey(
     readEnv("SUPABASE_SERVICE_ROLE_KEY") ||
-    readEnv("SUPABASE_SECRET_KEY") ||
-    readEnv("SUPABASE_SERVICE_KEY");
+      readEnv("SUPABASE_SECRET_KEY") ||
+      readEnv("SUPABASE_SERVICE_KEY"),
+  );
 
   return {
     url,
@@ -44,7 +67,7 @@ export function assertSupabaseServiceConfig() {
   const config = getSupabaseConfig();
 
   if (!config.url || !config.serviceRoleKey) {
-    throw new Error("Supabase Service Role 環境變數尚未設定完成。");
+    throw new Error("Supabase Service Role 金鑰尚未設定完成。");
   }
 
   return config;
