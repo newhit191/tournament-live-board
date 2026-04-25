@@ -27,21 +27,36 @@ function sanitizeSupabaseKey(value: string) {
   return value;
 }
 
+function firstValid(candidates: string[], sanitizer: (value: string) => string) {
+  for (const candidate of candidates) {
+    const normalized = sanitizer(candidate);
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
 export function getSupabaseConfig() {
-  const url = sanitizeSupabaseUrl(
-    readEnv("NEXT_PUBLIC_SUPABASE_URL") || readEnv("SUPABASE_URL"),
+  const url = firstValid(
+    [readEnv("NEXT_PUBLIC_SUPABASE_URL"), readEnv("SUPABASE_URL")],
+    sanitizeSupabaseUrl,
   );
 
-  const anonKey = sanitizeSupabaseKey(
-    readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
-      readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
+  const anonKey = firstValid(
+    [
+      readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+      readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
       readEnv("SUPABASE_ANON_KEY"),
+    ],
+    sanitizeSupabaseKey,
   );
 
-  const serviceRoleKey = sanitizeSupabaseKey(
-    readEnv("SUPABASE_SERVICE_ROLE_KEY") ||
-      readEnv("SUPABASE_SECRET_KEY") ||
+  const serviceRoleKey = firstValid(
+    [
+      readEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      readEnv("SUPABASE_SECRET_KEY"),
       readEnv("SUPABASE_SERVICE_KEY"),
+    ],
+    sanitizeSupabaseKey,
   );
 
   return {
