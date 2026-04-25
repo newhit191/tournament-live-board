@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getMissingSupabaseEnvs } from "@/lib/supabase/config";
+import { getMissingSupabaseEnvs, getSupabaseConfig } from "@/lib/supabase/config";
 
 type SupabaseSetupNoticeProps = {
   title?: string;
@@ -9,15 +9,23 @@ type SupabaseSetupNoticeProps = {
   debugMessage?: string | null;
 };
 
+function getKeyHint(label: string, value: string) {
+  if (!value) return `${label}: 未設定`;
+  const head = value.slice(0, 14);
+  const tail = value.slice(-6);
+  return `${label}: ${head}...${tail}（長度 ${value.length}）`;
+}
+
 export function SupabaseSetupNotice({
-  title = "目前系統尚未完成 Supabase 設定",
-  description = "此頁需要 Supabase 環境變數才能正常讀取資料，請先在 Vercel 專案補齊設定後重新整理。",
+  title = "尚未完成 Supabase 設定",
+  description = "請先補齊必要的 Supabase 環境變數，再重新部署網站。",
   requireServiceRole = false,
   debugMessage = null,
 }: SupabaseSetupNoticeProps) {
   const required = requireServiceRole
     ? getMissingSupabaseEnvs()
     : getMissingSupabaseEnvs().filter((name) => name !== "SUPABASE_SERVICE_ROLE_KEY");
+  const config = getSupabaseConfig();
 
   return (
     <section className="panel rounded-[1.5rem] border border-amber-300/30 bg-amber-300/10 p-5 sm:p-6">
@@ -34,9 +42,23 @@ export function SupabaseSetupNotice({
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-emerald-200">公開環境變數已就緒，若仍異常請查看 Vercel Deploy Logs。</p>
+          <p className="mt-2 text-sm text-emerald-200">公開環境變數已就緒，若仍異常請查看 Deploy Logs。</p>
         )}
       </div>
+
+      {requireServiceRole ? (
+        <div className="mt-4 rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3">
+          <p className="text-xs tracking-[0.2em] text-cyan-100/85">金鑰格式檢查（遮罩）</p>
+          <ul className="mt-2 space-y-1 text-xs text-cyan-100/85">
+            <li>{getKeyHint("NEXT_PUBLIC_SUPABASE_ANON_KEY", config.anonKey)}</li>
+            <li>{getKeyHint("SUPABASE_SERVICE_ROLE_KEY", config.serviceRoleKey)}</li>
+          </ul>
+          <p className="mt-2 text-xs text-cyan-100/80">
+            正常情況：匿名金鑰通常以 <code>sb_publishable_</code> 開頭，服務金鑰通常以{" "}
+            <code>sb_secret_</code> 開頭。
+          </p>
+        </div>
+      ) : null}
 
       {debugMessage ? (
         <div className="mt-4 rounded-2xl border border-rose-300/28 bg-rose-300/10 px-4 py-3">
@@ -62,3 +84,4 @@ export function SupabaseSetupNotice({
     </section>
   );
 }
+

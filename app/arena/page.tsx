@@ -133,7 +133,7 @@ export default async function ArenaPage({
   }>;
 }) {
   const config = getSupabaseConfig();
-  if (!config.isReady || !config.isServiceReady) {
+  if (!config.isReady) {
     return (
       <div className="min-h-screen pb-24 safe-bottom-pad">
         <SiteNav />

@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseInvalidApiKeyError } from "@/lib/supabase/errors";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   ArenaChallenge,
   ArenaMatch,
@@ -50,8 +52,8 @@ function mapPlayer(row: PlayerRow): ArenaPlayer {
 }
 
 export async function loadPlayersByOwner(ownerAccountId: string) {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const client = await createSupabaseServerClient();
+  const { data, error } = await client
     .from("players")
     .select("id, owner_account_id, family_id, display_name, is_child, is_active, player_wallets(balance, locked_balance)")
     .eq("owner_account_id", ownerAccountId)
@@ -66,8 +68,8 @@ export async function loadPlayersByOwner(ownerAccountId: string) {
 }
 
 export async function loadArenaPlayerById(playerId: string) {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const client = await createSupabaseServerClient();
+  const { data, error } = await client
     .from("players")
     .select(
       "id, owner_account_id, family_id, display_name, is_child, is_active, player_wallets(balance, locked_balance)",
@@ -88,8 +90,8 @@ export async function loadArenaPlayerById(playerId: string) {
 }
 
 export async function loadAccountRole(accountId: string) {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const client = await createSupabaseServerClient();
+  const { data, error } = await client
     .from("accounts")
     .select("role")
     .eq("id", accountId)
@@ -112,6 +114,9 @@ export async function loadArenaChallenges(limit = 80): Promise<ArenaChallenge[]>
     .limit(limit);
 
   if (challengeError) {
+    if (isSupabaseInvalidApiKeyError(challengeError)) {
+      return [];
+    }
     throw new Error(`讀取約戰清單失敗：${challengeError.message}`);
   }
 
@@ -454,6 +459,9 @@ export async function loadLeaderboard(scope: "overall" | "cross_family") {
     .eq("is_active", true);
 
   if (playersError) {
+    if (isSupabaseInvalidApiKeyError(playersError)) {
+      return [] satisfies LeaderboardEntry[];
+    }
     throw new Error(`讀取排行榜玩家失敗：${playersError.message}`);
   }
 

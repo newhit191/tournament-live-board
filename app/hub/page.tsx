@@ -113,11 +113,15 @@ async function HubPageContent() {
     redirect("/auth");
   }
 
-  await bootstrapAccountAndPrimaryPlayer({
-    userId: user.id,
-    email: user.email ?? null,
-    displayName: (user.user_metadata as { display_name?: string } | null)?.display_name ?? null,
-  });
+  try {
+    await bootstrapAccountAndPrimaryPlayer({
+      userId: user.id,
+      email: user.email ?? null,
+      displayName: (user.user_metadata as { display_name?: string } | null)?.display_name ?? null,
+    });
+  } catch {
+    // service key 異常時，改由 DB trigger / 後續流程補齊資料，先不中斷頁面。
+  }
 
   // 即時同步總榜與跨家庭榜，讓玩家中心直接顯示全服資訊
   const [overallLeaderboard, crossFamilyLeaderboard] = await Promise.all([
@@ -517,7 +521,7 @@ async function HubPageContent() {
 
 export default async function HubPage() {
   const config = getSupabaseConfig();
-  if (!config.isReady || !config.isServiceReady) {
+  if (!config.isReady) {
     return (
       <div className="min-h-screen pb-24 safe-bottom-pad">
         <SiteNav />

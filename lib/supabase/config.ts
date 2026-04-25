@@ -1,11 +1,25 @@
 function readEnv(name: string) {
-  return process.env[name]?.trim() ?? "";
+  const raw = process.env[name]?.trim() ?? "";
+  if (!raw) return "";
+  if (
+    (raw.startsWith("\"") && raw.endsWith("\"")) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
 }
 
 export function getSupabaseConfig() {
-  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  const serviceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL") || readEnv("SUPABASE_URL");
+  const anonKey =
+    readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
+    readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
+    readEnv("SUPABASE_ANON_KEY");
+  const serviceRoleKey =
+    readEnv("SUPABASE_SERVICE_ROLE_KEY") ||
+    readEnv("SUPABASE_SECRET_KEY") ||
+    readEnv("SUPABASE_SERVICE_KEY");
 
   return {
     url,

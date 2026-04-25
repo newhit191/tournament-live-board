@@ -17,7 +17,8 @@ function buildDefaultName(email: string | null, displayName: string | null) {
 
 async function resolveUniquePlayerName(baseName: string) {
   const admin = createSupabaseAdminClient();
-  let candidate = baseName.trim() || "玩家";
+  const safeBase = baseName.trim() || "玩家";
+  let candidate = safeBase;
   let suffix = 1;
 
   while (suffix <= 100) {
@@ -34,10 +35,10 @@ async function resolveUniquePlayerName(baseName: string) {
     }
 
     suffix += 1;
-    candidate = `${baseName}_${suffix}`;
+    candidate = `${safeBase}_${suffix}`;
   }
 
-  return `${baseName}_${Date.now().toString().slice(-4)}`;
+  return `${safeBase}_${Date.now().toString().slice(-4)}`;
 }
 
 export async function bootstrapAccountAndPrimaryPlayer(input: BootstrapInput) {
@@ -137,8 +138,9 @@ export async function bootstrapAccountAndPrimaryPlayer(input: BootstrapInput) {
       movement: "credit",
       amount: 20,
       event_type: "signup_bonus",
-      reason: "新帳號註冊贈送 20 顆星星",
+      reason: "註冊贈送 20 顆星星",
       created_by_account_id: input.userId,
     });
   }
 }
+
