@@ -14,19 +14,32 @@ export type HubActionState = {
 };
 
 const createPlayerSchema = z.object({
-  displayName: z.string().trim().min(2, "玩家名稱至少 2 個字。").max(24, "玩家名稱最多 24 個字。"),
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "玩家名稱至少 2 個字。")
+    .max(24, "玩家名稱最多 24 個字。"),
   isChild: z.boolean().default(false),
 });
 
 const familyTransferSchema = z.object({
   fromPlayerId: z.uuid("來源玩家格式錯誤。"),
   toPlayerId: z.uuid("目標玩家格式錯誤。"),
-  amount: z.coerce.number().int().min(1, "轉帳至少 1 顆星星。"),
+  amount: z.coerce.number().int().min(1, "轉帳最少 1 顆星。"),
 });
 
 const equipTitleSchema = z.object({
-  playerId: z.uuid("玩家識別錯誤。"),
+  playerId: z.uuid("玩家選擇錯誤。"),
   titleDefinitionId: z.string().optional(),
+});
+
+const renamePlayerSchema = z.object({
+  playerId: z.uuid("玩家選擇錯誤。"),
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "玩家 ID 至少 2 個字。")
+    .max(24, "玩家 ID 最多 24 個字。"),
 });
 
 async function requireUserId() {
@@ -124,7 +137,7 @@ export async function transferFamilyStarsAction(
 
   if (parsed.data.fromPlayerId === parsed.data.toPlayerId) {
     return {
-      error: "來源與目標玩家不能相同。",
+      error: "來源玩家與目標玩家不能相同。",
       success: null,
     };
   }
@@ -134,12 +147,12 @@ export async function transferFamilyStarsAction(
     p_from_player_id: parsed.data.fromPlayerId,
     p_to_player_id: parsed.data.toPlayerId,
     p_amount: parsed.data.amount,
-    p_reason: "家庭內轉帳",
+    p_reason: "玩家中心轉帳",
   });
 
   if (error || !data) {
     return {
-      error: "家庭轉帳失敗，請確認星星餘額與玩家歸屬。",
+      error: "玩家轉帳失敗，請確認星星餘額或玩家狀態。",
       success: null,
     };
   }
@@ -147,7 +160,7 @@ export async function transferFamilyStarsAction(
   revalidatePath("/hub");
   return {
     error: null,
-    success: "家庭轉帳成功。",
+    success: "玩家轉帳成功。",
   };
 }
 
@@ -177,7 +190,7 @@ export async function equipPlayerTitleAction(
 
   if (!player || player.owner_account_id !== ownerAccountId) {
     return {
-      error: "你只能調整自己帳號底下玩家的稱號。",
+      error: "你只能修改自己帳號底下玩家的稱號。",
       success: null,
     };
   }
@@ -197,7 +210,7 @@ export async function equipPlayerTitleAction(
 
     if (!unlockedTitle) {
       return {
-        error: "這個玩家尚未解鎖該稱號。",
+        error: "你尚未解鎖這個稱號。",
         success: null,
       };
     }
@@ -213,7 +226,94 @@ export async function equipPlayerTitleAction(
   revalidatePath("/rankings");
   return {
     error: null,
-    success: "稱號設定已更新。",
+    success: "稱號已更新。",
+  };
+}
+
+export async function renamePlayerDisplayNameAction(
+  _prevState: HubActionState,
+  formData: FormData,
+): Promise<HubActionState> {
+  const ownerAccountId = await requireUserId();
+  const parsed = renamePlayerSchema.safeParse({
+    playerId: String(formData.get("playerId") ?? ""),
+    displayName: String(formData.get("displayName") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "玩家 ID 格式錯誤。",
+      success: null,
+    };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const normalizedName = parsed.data.displayName.trim();
+
+  const { data: ownedPlayer } = await admin
+    .from("players")
+    .select("id, owner_account_id, display_name")
+    .eq("id", parsed.data.playerId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!ownedPlayer || ownedPlayer.owner_account_id !== ownerAccountId) {
+    return {
+      error: "你只能修改自己帳號底下的玩家 ID。",
+      success: null,
+    };
+  }
+
+  if ((ownedPlayer.display_name ?? "").trim() === normalizedName) {
+    return {
+      error: "新 ID 與目前相同，請輸入不同名稱。",
+      success: null,
+    };
+  }
+
+  const { data: existingPlayer } = await admin
+    .from("players")
+    .select("id")
+    .ilike("display_name", normalizedName)
+    .eq("is_active", true)
+    .neq("id", parsed.data.playerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingPlayer) {
+    return {
+      error: "這個玩家 ID 已被使用，請換一個名稱。",
+      success: null,
+    };
+  }
+
+  const { error } = await admin
+    .from("players")
+    .update({ display_name: normalizedName })
+    .eq("id", parsed.data.playerId)
+    .eq("owner_account_id", ownerAccountId);
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        error: "這個玩家 ID 已被使用，請換一個名稱。",
+        success: null,
+      };
+    }
+    return {
+      error: "更新玩家 ID 失敗，請稍後再試。",
+      success: null,
+    };
+  }
+
+  revalidatePath("/hub");
+  revalidatePath("/arena");
+  revalidatePath("/rankings");
+  revalidatePath("/gm");
+
+  return {
+    error: null,
+    success: "玩家 ID 更新成功。",
   };
 }
 

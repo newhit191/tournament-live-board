@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import {
   createPlayerProfileAction,
   equipPlayerTitleAction,
+  renamePlayerDisplayNameAction,
   transferFamilyStarsAction,
   type HubActionState,
 } from "@/app/hub/actions";
@@ -29,7 +30,11 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
     createPlayerProfileAction,
     initialState,
   );
-  const [transferState, transferAction, transfering] = useActionState(
+  const [renameState, renameAction, renaming] = useActionState(
+    renamePlayerDisplayNameAction,
+    initialState,
+  );
+  const [transferState, transferAction, transferring] = useActionState(
     transferFamilyStarsAction,
     initialState,
   );
@@ -37,18 +42,18 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
     equipPlayerTitleAction,
     initialState,
   );
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
 
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const selectedPlayer = players.find((player) => player.id === selectedPlayerId) ?? null;
   const availableTitles = useMemo(() => selectedPlayer?.unlockedTitles ?? [], [selectedPlayer]);
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <section className="panel rounded-[1.5rem] p-5">
-        <p className="eyebrow text-cyan-200">新增玩家</p>
-        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">家庭成員管理</h2>
+        <p className="eyebrow text-cyan-200">玩家管理</p>
+        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">建立新玩家</h2>
         <p className="mt-2 text-sm leading-7 text-white/65">
-          一個帳號可以建立多位玩家。小孩玩家可由你代為管理，並且可以正式參與多人賽事。
+          你可以在同一個帳號底下建立多位玩家（例如小孩角色），之後在約戰與排行榜中都可分開計算。
         </p>
 
         <form action={createAction} className="mt-5 space-y-4">
@@ -57,7 +62,7 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
             <input
               name="displayName"
               required
-              placeholder="例如：阿哲、1號小孩"
+              placeholder="例如：小龍 / 阿哲"
               className="w-full rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3 text-base text-white outline-none transition placeholder:text-white/30 focus:border-cyan-300/40 sm:text-sm"
             />
           </label>
@@ -68,7 +73,7 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
               name="isChild"
               className="h-4 w-4 rounded border-white/20 bg-white/10"
             />
-            此玩家為小孩成員
+            這是小孩玩家
           </label>
 
           <StatusMessage state={createState} />
@@ -84,10 +89,44 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
       </section>
 
       <section className="panel rounded-[1.5rem] p-5">
-        <p className="eyebrow text-amber-200">星星轉帳</p>
-        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">家庭內互轉</h2>
+        <p className="eyebrow text-amber-200">玩家 ID</p>
+        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">修改玩家 ID</h2>
         <p className="mt-2 text-sm leading-7 text-white/65">
-          只允許同家庭玩家間互轉。每筆交易都會寫入不可逆帳本，提供後台追溯。
+          登入後可自行修改玩家 ID。系統會檢查重複名稱，避免與其他玩家撞名。
+        </p>
+
+        <form action={renameAction} className="mt-5 space-y-4">
+          <SelectField name="playerId" label="選擇玩家" players={players} />
+
+          <label className="block space-y-2">
+            <span className="text-xs tracking-[0.24em] text-white/50">新玩家 ID</span>
+            <input
+              name="displayName"
+              required
+              minLength={2}
+              maxLength={24}
+              placeholder="輸入新的玩家 ID"
+              className="w-full rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3 text-base text-white outline-none transition placeholder:text-white/30 focus:border-amber-300/40 sm:text-sm"
+            />
+          </label>
+
+          <StatusMessage state={renameState} />
+
+          <button
+            type="submit"
+            disabled={renaming || players.length === 0}
+            className="rounded-full border border-amber-300/35 bg-amber-300/15 px-5 py-2.5 text-sm tracking-[0.2em] text-amber-100 transition hover:bg-amber-300/22 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {renaming ? "更新中..." : "更新玩家 ID"}
+          </button>
+        </form>
+      </section>
+
+      <section className="panel rounded-[1.5rem] p-5">
+        <p className="eyebrow text-amber-200">家庭轉帳</p>
+        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">玩家內部轉星</h2>
+        <p className="mt-2 text-sm leading-7 text-white/65">
+          同一帳號內可在不同玩家間轉移星星，方便比賽前快速調整。
         </p>
 
         <form action={transferAction} className="mt-5 space-y-4">
@@ -95,7 +134,7 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
           <SelectField name="toPlayerId" label="目標玩家" players={players} />
 
           <label className="block space-y-2">
-            <span className="text-xs tracking-[0.24em] text-white/50">星星數量</span>
+            <span className="text-xs tracking-[0.24em] text-white/50">轉帳顆數</span>
             <input
               name="amount"
               type="number"
@@ -109,22 +148,22 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
 
           <button
             type="submit"
-            disabled={transfering || players.length < 2}
+            disabled={transferring || players.length < 2}
             className="rounded-full border border-amber-300/35 bg-amber-300/15 px-5 py-2.5 text-sm tracking-[0.2em] text-amber-100 transition hover:bg-amber-300/22 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {transfering ? "轉帳中..." : "確認轉帳"}
+            {transferring ? "轉帳中..." : "確認轉帳"}
           </button>
         </form>
       </section>
 
-      <section className="panel rounded-[1.5rem] p-5 lg:col-span-2">
+      <section className="panel rounded-[1.5rem] p-5">
         <p className="eyebrow text-cyan-200">玩家稱號</p>
-        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">佩戴已解鎖稱號</h2>
+        <h2 className="mt-2 font-display text-3xl tracking-[0.08em] text-white">配戴解鎖稱號</h2>
         <p className="mt-2 text-sm leading-7 text-white/65">
-          系統會根據星星、勝場與跨家庭勝場解鎖特殊稱號。你可以替每位玩家設定要顯示的稱號。
+          選擇玩家後可設定已解鎖稱號，排行榜與玩家資訊會同步更新。
         </p>
 
-        <form action={titleAction} className="mt-5 grid gap-4 md:grid-cols-[1fr,1fr,auto] md:items-end">
+        <form action={titleAction} className="mt-5 space-y-4">
           <label className="block space-y-2">
             <span className="text-xs tracking-[0.24em] text-white/50">玩家</span>
             <select
@@ -134,10 +173,12 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
               onChange={(event) => setSelectedPlayerId(event.target.value)}
               className="tlb-select w-full rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3 text-base text-white outline-none transition [color-scheme:dark] focus:border-cyan-300/40 sm:text-sm"
             >
-              <option value="" className="bg-slate-900 text-white">請選擇玩家</option>
+              <option value="" className="bg-slate-900 text-white">
+                請選擇玩家
+              </option>
               {players.map((player) => (
                 <option key={player.id} value={player.id} className="bg-slate-900 text-white">
-                  {player.displayName}（目前：{player.equippedTitle ?? "未佩戴"}）
+                  {player.displayName}（目前：{player.equippedTitle ?? "未配戴"}）
                 </option>
               ))}
             </select>
@@ -149,14 +190,16 @@ export function HubControls({ players }: { players: PlayerItem[] }) {
               name="titleDefinitionId"
               className="tlb-select w-full rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3 text-base text-white outline-none transition [color-scheme:dark] focus:border-cyan-300/40 sm:text-sm"
             >
-              <option value="" className="bg-slate-900 text-white">清除佩戴（不顯示）</option>
+              <option value="" className="bg-slate-900 text-white">
+                先卸下稱號（不配戴）
+              </option>
               {availableTitles.map((title) => (
                 <option key={title.id} value={title.id} className="bg-slate-900 text-white">
                   {title.name}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-white/45">請先選擇玩家，再選擇該玩家已解鎖的稱號。</p>
+            <p className="text-xs text-white/45">請先選擇玩家，才會帶出該玩家已解鎖稱號。</p>
           </label>
 
           <button
@@ -196,7 +239,7 @@ function SelectField({
         </option>
         {players.map((player) => (
           <option key={player.id} value={player.id} className="bg-slate-900 text-white">
-            {player.displayName}（可用 {player.balance}、鎖定 {player.lockedBalance}）
+            {player.displayName}（可用 {player.balance}／鎖定 {player.lockedBalance}）
           </option>
         ))}
       </select>
